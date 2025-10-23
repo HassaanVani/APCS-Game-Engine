@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<project name="APCS-Game-Engine" default="default" basedir=".">
+    <description>Builds, tests, and runs the project APCS-Game-Engine.</description>
+    <import file="nbproject/build-impl.xml"/>
+    
+    <!-- Custom build targets can be added here -->
+    
+    <target name="-post-clean">
+        <!-- Clean up any additional build artifacts -->
+    </target>
+    
+    <target name="-post-compile">
+        <!-- Custom post-compile tasks can be added here -->
+    </target>
+</project>

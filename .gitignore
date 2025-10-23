@@ -30,6 +30,14 @@ hs_err_pid*
 *.swo
 *~
 
+# NetBeans specific files
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
 # Mac OS
 .DS_Store
 

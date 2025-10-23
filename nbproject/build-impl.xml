@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="APCS-Game-Engine-impl" default="default" basedir="..">
+    <import file="nbproject-impl.xml" optional="true"/>
+    
+    <target name="default" depends="jar" description="Build whole project."/>
+    
+    <target name="init">
+        <property file="nbproject/project.properties"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+    </target>
+    
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}" 
+               destdir="${build.classes.dir}"
+               includeantruntime="false"
+               source="${javac.source}"
+               target="${javac.target}"
+               debug="${javac.debug}">
+            <classpath path="${javac.classpath}"/>
+        </javac>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${src.dir}" excludes="**/*.java"/>
+        </copy>
+    </target>
+    
+    <target name="jar" depends="compile">
+        <jar destfile="${dist.jar}" 
+             basedir="${build.classes.dir}"
+             manifest="${manifest.file}">
+        </jar>
+    </target>
+    
+    <target name="run" depends="jar">
+        <java classname="${main.class}" 
+              classpath="${dist.jar}"
+              fork="true">
+            <arg line="${application.args}"/>
+        </java>
+    </target>
+    
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+    
+    <target name="javadoc" depends="init">
+        <mkdir dir="${dist.javadoc.dir}"/>
+        <javadoc destdir="${dist.javadoc.dir}"
+                 sourcepath="${src.dir}"
+                 packagenames="*"
+                 source="${javac.source}"
+                 encoding="${source.encoding}">
+            <classpath path="${javac.classpath}"/>
+        </javadoc>
+    </target>
+    
+    <target name="test" depends="compile">
+        <!-- Test target placeholder -->
+    </target>
+</project>
