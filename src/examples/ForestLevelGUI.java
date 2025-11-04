@@ -5,7 +5,7 @@ import examples.*;
 
 /**
  * Example Level 1 - The Dark Forest (GUI Version)
- * This demonstrates how students should structure their levels for GUI
+ * Demonstrates level structure for GUI
  */
 public class ForestLevelGUI extends LevelGUI {
     private CombatSystemGUI combat;

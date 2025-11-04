@@ -6,7 +6,7 @@ import java.awt.*;
 
 /**
  * Example Level 1 - Forest Zone
- * Shows students how to create a level with tile-based map
+ * Demonstrates a level with tile-based map
  */
 public class ForestLevel extends GameLevel {
     

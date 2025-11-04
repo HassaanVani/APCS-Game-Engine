@@ -19,11 +19,9 @@ public class Player extends Entity {
         super("Player", 100, 15, 10);
         this.keyHandler = keyHandler;
         
-        // Default position
         worldX = 100;
         worldY = 100;
         
-        // Set default sprite (placeholder - students will add their own)
         createDefaultSprite();
     }
     
@@ -64,12 +62,7 @@ public class Player extends Entity {
     }
     
     public void render(Graphics2D g2) {
-        // Draw sprite at player position
         g2.drawImage(sprite, worldX, worldY, null);
-        
-        // Debug: Draw collision box
-        // g2.setColor(Color.RED);
-        // g2.drawRect(worldX + solidArea.x, worldY + solidArea.y, solidArea.width, solidArea.height);
     }
     
     public void setPosition(int x, int y) {

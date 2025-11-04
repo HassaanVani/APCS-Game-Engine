@@ -89,7 +89,6 @@ public class CombatSystemGUI {
                 gui.displayText(player.getName() + " takes a defensive stance!");
                 gui.displayText("Defense temporarily doubled!");
                 enemyTurn();
-                // Reset defense after enemy turn
                 player.setDefense(originalDefense);
                 break;
         }

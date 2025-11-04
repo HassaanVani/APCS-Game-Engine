@@ -1,8 +1,8 @@
 package core;
 
 /**
- * Abstract Enemy class - students will extend this to create unique enemies
- * Demonstrates polymorphism - each student can create different enemy types
+ * Abstract Enemy class - extend this to create unique enemies
+ * Demonstrates polymorphism - each enemy type has different implementation
  */
 public abstract class Enemy extends Entity {
     protected int expReward;
@@ -16,7 +16,7 @@ public abstract class Enemy extends Entity {
     
     /**
      * Determine enemy's action during combat
-     * Students can override this for unique AI behavior
+     * Override this for unique AI behavior
      */
     public abstract void takeTurn(Player player);
     
@@ -30,7 +30,7 @@ public abstract class Enemy extends Entity {
     }
     
     /**
-     * Get a description of the enemy (students can override)
+     * Get a description of the enemy
      */
     public abstract String getDescription();
     

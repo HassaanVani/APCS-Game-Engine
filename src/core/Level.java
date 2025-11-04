@@ -2,7 +2,7 @@ package core;
 
 /**
  * Abstract Level class - THE KEY POLYMORPHISM CONCEPT
- * Each student creates their own level by extending this class
+ * Create custom levels by extending this class
  * The game engine can run any level that extends this class
  */
 public abstract class Level {
@@ -17,7 +17,7 @@ public abstract class Level {
     }
     
     /**
-     * Start the level - students implement their level's logic here
+     * Start the level - implement level logic here
      * This is where polymorphism shines - each level has different implementation
      * but the game engine calls this method the same way for all levels
      */

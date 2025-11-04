@@ -7,8 +7,7 @@ import java.util.Scanner;
 
 /**
  * Example Level 1 - The Dark Forest
- * This demonstrates how students should structure their levels
- * Shows combat encounters and item rewards
+ * Demonstrates level structure with combat encounters and item rewards
  */
 public class ForestLevel extends Level {
     private Scanner scanner;

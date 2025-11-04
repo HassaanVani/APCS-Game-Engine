@@ -37,7 +37,6 @@ public class Slime extends Enemy {
     
     @Override
     public String performBattleAction(Player player) {
-        // Simple attack
         int damage = attack();
         player.takeDamage(damage);
         return name + " bounces at you for " + damage + " damage!";

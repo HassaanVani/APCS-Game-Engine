@@ -88,7 +88,6 @@ public class CombatSystem {
                 player.setDefense(originalDefense * 2);
                 System.out.println(player.getName() + " takes a defensive stance!");
                 System.out.println("Defense temporarily doubled!");
-                // Defense will be reset after enemy turn
                 break;
         }
     }

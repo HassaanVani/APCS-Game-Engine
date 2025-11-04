@@ -6,7 +6,7 @@ import javax.swing.JFrame;
  * Main class for 2D RPG Engine
  * 
  * POLYMORPHISM DEMONSTRATION:
- * Different student levels all extend GameLevel
+ * Different levels all extend GameLevel
  * The engine treats them all the same way!
  */
 public class Main2D {
@@ -23,22 +23,11 @@ public class Main2D {
         window.setLocationRelativeTo(null);
         window.setVisible(true);
         
-        // POLYMORPHISM IN ACTION!
-        // Each student creates their own level that extends GameLevel
-        // The hub connects them all together!
-        
-        // Create the hub (central corridor)
         GameLevel hub = new HubLevel();
         gamePanel.setHubLevel(hub);
         
-        // Register all student levels by name
-        // STUDENTS: Add your level here!
         gamePanel.registerLevel("Forest", new ForestLevel());
         gamePanel.registerLevel("Cave", new CaveLevel());
-        // gamePanel.registerLevel("Student 1", new StudentName_Level());
-        // gamePanel.registerLevel("Student 2", new AnotherStudent_Level());
-        
-        // Start in the hub
         gamePanel.setLevel(hub);
         gamePanel.startGameThread();
         

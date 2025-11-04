@@ -33,13 +33,13 @@ public abstract class GameLevel {
     }
     
     /**
-     * Initialize the level - students implement their map layout here
+     * Initialize the level map layout
      * POLYMORPHISM: Each level has different implementation
      */
     public abstract void setupMap();
     
     /**
-     * Add enemies to the level - students place their enemies
+     * Add enemies to the level
      */
     public abstract void setupEnemies();
     
@@ -89,7 +89,7 @@ public abstract class GameLevel {
     }
     
     /**
-     * Get color for tile type - students can override for custom tiles
+     * Get color for tile type - can be overridden for custom tiles
      */
     protected Color getTileColor(int tileType) {
         switch (tileType) {
@@ -103,7 +103,7 @@ public abstract class GameLevel {
     
     /**
      * Check if a tile is solid (blocks movement)
-     * Students override to define walkable areas
+     * Override to define walkable areas
      */
     public boolean isTileSolid(int tileX, int tileY) {
         if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) {

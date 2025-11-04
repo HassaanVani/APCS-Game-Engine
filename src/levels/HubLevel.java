@@ -5,8 +5,8 @@ import java.awt.*;
 import java.util.ArrayList;
 
 /**
- * Hub/Corridor Level - Main area where students can enter different level rooms
- * This is where all student levels connect!
+ * Hub/Corridor Level - Main area where players can enter different level rooms
+ * This is where all levels connect!
  */
 public class HubLevel extends GameLevel {
     private ArrayList<Door> doors = new ArrayList<>();
@@ -66,18 +66,13 @@ public class HubLevel extends GameLevel {
         );
         doors.add(caveDoor);
         
-        // Door for Student Level 1 (right side) - STUDENTS ADD THEIR LEVELS HERE
         Door studentDoor1 = new Door(
             GamePanel.TILE_SIZE * 12,
             GamePanel.TILE_SIZE * 5,
             "Student 1",
-            new Color(200, 100, 255)  // Purple - placeholder
+            new Color(200, 100, 255)
         );
         doors.add(studentDoor1);
-        
-        // Add more doors as students create levels!
-        // Door studentDoor2 = new Door(x, y, "Student 2", Color.CYAN);
-        // doors.add(studentDoor2);
     }
     
     @Override

@@ -5,7 +5,6 @@ import core.Player;
 
 /**
  * Example Item implementation - Health Potion
- * Students can use this as a template for creating their own items
  */
 public class HealthPotion extends Item {
     private int healAmount;

@@ -1,7 +1,7 @@
 package core;
 
 /**
- * Abstract Item class - students can create unique items for their levels
+ * Abstract Item class - create unique items for levels
  * Demonstrates polymorphism through different item effects
  */
 public abstract class Item {
@@ -17,7 +17,7 @@ public abstract class Item {
     
     /**
      * Use the item on the player
-     * Students override this for different effects
+     * Override this for different effects
      */
     public abstract void use(Player player);
     

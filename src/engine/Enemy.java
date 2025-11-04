@@ -4,8 +4,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
- * Abstract Enemy class - students extend this for custom enemies
- * POLYMORPHISM: Each student creates different enemy types
+ * Abstract Enemy class - extend this for custom enemies
+ * POLYMORPHISM: Each enemy type has different implementation
  */
 public abstract class Enemy extends Entity {
     protected int expReward;
@@ -36,7 +36,7 @@ public abstract class Enemy extends Entity {
     
     /**
      * Define enemy AI behavior during battle
-     * Students can override for unique strategies
+     * Override for unique strategies
      */
     public abstract String performBattleAction(Player player);
     
