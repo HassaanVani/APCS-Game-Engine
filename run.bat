@@ -1,7 +1,5 @@
 @echo off
-echo Starting APCS Turn-Based RPG...
+echo Starting 2D RPG Engine...
 echo.
 java -cp src Main
-echo.
-echo Game ended.
 pause

@@ -1,17 +1,16 @@
 @echo off
-echo Compiling APCS Game Engine...
+echo Compiling 2D RPG Engine...
 echo.
 
-REM Compile core classes
-javac src/core/*.java
+javac src/engine/*.java src/enemies/*.java src/levels/*.java src/Main.java
 
-REM Compile examples
-javac -cp src src/examples/*.java
+if %errorlevel% == 0 (
+    echo.
+    echo Compilation successful!
+    echo Run with: run.bat
+) else (
+    echo.
+    echo Compilation failed! Check errors above.
+)
 
-REM Compile Main
-javac -cp src src/Main.java
-
-echo.
-echo Compilation complete!
-echo Run the game with: run.bat
 pause
