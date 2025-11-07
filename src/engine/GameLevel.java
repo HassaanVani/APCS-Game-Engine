@@ -1,7 +1,9 @@
 package engine;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Abstract GameLevel class - THE KEY POLYMORPHISM CONCEPT
@@ -19,17 +21,24 @@ public abstract class GameLevel {
     // Tile map (2D array of tile types)
     protected int[][] tileMap;
     
+    // Tile sprites (optional - can use sprites instead of colors)
+    protected HashMap<Integer, BufferedImage> tileSprites = new HashMap<>();
+    
     // Enemies in this level
     protected ArrayList<Enemy> enemies = new ArrayList<>();
     
     // Start position for player
     protected int startX, startY;
     
+    // LevelBuilder helper for students
+    protected LevelBuilder builder;
+    
     public GameLevel(String levelName, int mapWidth, int mapHeight) {
         this.levelName = levelName;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         this.tileMap = new int[mapWidth][mapHeight];
+        this.builder = new LevelBuilder(this);
     }
     
     /**
@@ -74,11 +83,18 @@ public abstract class GameLevel {
         for (int x = 0; x < mapWidth; x++) {
             for (int y = 0; y < mapHeight; y++) {
                 int tileType = tileMap[x][y];
-                Color tileColor = getTileColor(tileType);
                 
-                g2.setColor(tileColor);
-                g2.fillRect(x * GamePanel.TILE_SIZE, y * GamePanel.TILE_SIZE, 
-                           GamePanel.TILE_SIZE, GamePanel.TILE_SIZE);
+                // Check if sprite exists for this tile type
+                if (tileSprites.containsKey(tileType)) {
+                    BufferedImage sprite = tileSprites.get(tileType);
+                    g2.drawImage(sprite, x * GamePanel.TILE_SIZE, y * GamePanel.TILE_SIZE, null);
+                } else {
+                    // Fall back to color rendering
+                    Color tileColor = getTileColor(tileType);
+                    g2.setColor(tileColor);
+                    g2.fillRect(x * GamePanel.TILE_SIZE, y * GamePanel.TILE_SIZE, 
+                               GamePanel.TILE_SIZE, GamePanel.TILE_SIZE);
+                }
                 
                 // Draw grid lines
                 g2.setColor(new Color(0, 0, 0, 50));
@@ -178,10 +194,43 @@ public abstract class GameLevel {
         }
     }
     
+    /**
+     * Set a sprite for a tile type (optional - for image-based tiles)
+     * @param tileType The tile type number
+     * @param sprite The sprite image to use
+     */
+    protected void setTileSprite(int tileType, BufferedImage sprite) {
+        tileSprites.put(tileType, sprite);
+    }
+    
+    /**
+     * Set a sprite for a tile type using SpriteManager
+     * @param tileType The tile type number
+     * @param filename Sprite filename
+     */
+    protected void setTileSprite(int tileType, String filename) {
+        BufferedImage sprite = SpriteManager.loadSprite(filename);
+        if (sprite != null) {
+            tileSprites.put(tileType, sprite);
+        }
+    }
+    
+    /**
+     * Set a sprite for a tile type with fallback color
+     * @param tileType The tile type number
+     * @param filename Sprite filename to try
+     * @param fallbackColor Color to use if sprite not found
+     */
+    protected void setTileSpriteOrColor(int tileType, String filename, Color fallbackColor) {
+        BufferedImage sprite = SpriteManager.getSpriteOrFallback(filename, fallbackColor);
+        tileSprites.put(tileType, sprite);
+    }
+    
     // Getters
     public String getLevelName() { return levelName; }
     public int getStartX() { return startX; }
     public int getStartY() { return startY; }
     public int getMapWidth() { return mapWidth; }
     public int getMapHeight() { return mapHeight; }
+    public LevelBuilder getBuilder() { return builder; }
 }
