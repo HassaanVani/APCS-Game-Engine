@@ -44,7 +44,9 @@ nbdist/
 # Windows
 Thumbs.db
 ehthumbs.db
+desktop.ini
 Desktop.ini
+[Dd]esktop.ini
 
 # Temporary files
 temp/
