@@ -11,34 +11,13 @@ import java.awt.image.BufferedImage;
 public class Bat extends Enemy {
     
     public Bat() {
-        super("Bat", 40, 12, 3, 35, 15);
-        createCustomSprite();
-    }
-    
-    private void createCustomSprite() {
-        sprite = new BufferedImage(GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = sprite.createGraphics();
+        super("Bat", 25, 12, 3, 30, 12, .2);
         
-        // Draw a bat shape
-        g2.setColor(new Color(60, 40, 80));
+        // Use triangle shape for bat (flying enemy)
+        setCustomSprite(new Color(80, 60, 100), "triangle");
         
-        // Body
-        g2.fillOval(18, 20, 12, 16);
-        
-        // Wings
-        int[] xPoints = {18, 8, 18};
-        int[] yPoints = {24, 28, 32};
-        g2.fillPolygon(xPoints, yPoints, 3);
-        
-        int[] xPoints2 = {30, 40, 30};
-        g2.fillPolygon(xPoints2, yPoints, 3);
-        
-        // Eyes (red)
-        g2.setColor(Color.RED);
-        g2.fillOval(20, 24, 3, 3);
-        g2.fillOval(26, 24, 3, 3);
-        
-        g2.dispose();
+        // Alternative: Load custom sprite with fallback
+        // setSpriteOrFallback("enemies/bat.png", new Color(80, 60, 100));
     }
     
     @Override

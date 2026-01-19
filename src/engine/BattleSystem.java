@@ -70,8 +70,7 @@ public class BattleSystem {
                         // Fight
                         playerAttack();
                     } else {
-                        // Run (50% chance)
-                        if (Math.random() < 0.5) {
+                        if (Math.random() < enemy.getRunChance()) {
                             message = "Got away safely!";
                             messageTimer = 60;
                             gamePanel.endBattle(false);
@@ -214,19 +213,19 @@ public class BattleSystem {
         g2.drawRect(boxX, boxY, boxWidth, boxHeight);
         
         // Message text
-        g2.setFont(new Font("Arial", Font.PLAIN, 18));
+        g2.setFont(new Font("Consolas", Font.PLAIN, 18));
         g2.drawString(message, boxX + 20, boxY + 40);
         
         // "Press SPACE to continue" hint
         if (state == BattleState.INTRO || state == BattleState.VICTORY || state == BattleState.DEFEAT) {
-            g2.setFont(new Font("Arial", Font.ITALIC, 12));
+            g2.setFont(new Font("Consolas", Font.ITALIC, 12));
             g2.drawString("Press SPACE to continue", boxX + 20, boxY + 80);
         }
     }
     
     private void drawActionMenu(Graphics2D g2) {
-        int menuX = GamePanel.SCREEN_WIDTH / 2 - 150;
-        int menuY = GamePanel.SCREEN_HEIGHT - 150;
+        int menuX = GamePanel.SCREEN_WIDTH / 2 + 50;
+        int menuY = GamePanel.SCREEN_HEIGHT - 125;
         int buttonWidth = 120;
         int buttonHeight = 50;
         int spacing = 20;

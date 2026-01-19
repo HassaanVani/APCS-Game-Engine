@@ -26,14 +26,28 @@ public class Player extends Entity {
     }
     
     private void createDefaultSprite() {
-        // Create a simple colored square as default sprite
-        sprite = new BufferedImage(GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = sprite.createGraphics();
-        g2.setColor(new Color(50, 150, 255)); // Blue player
-        g2.fillRect(4, 4, GamePanel.TILE_SIZE - 8, GamePanel.TILE_SIZE - 8);
-        g2.setColor(Color.WHITE);
-        g2.drawRect(4, 4, GamePanel.TILE_SIZE - 8, GamePanel.TILE_SIZE - 8);
-        g2.dispose();
+        // Try to load custom sprite, fall back to default
+        sprite = SpriteManager.getSpriteOrFallback("player.png", new Color(50, 150, 255));
+    }
+    
+    /**
+     * Set a custom sprite for the player
+     * @param filename Sprite filename (e.g., "player.png")
+     */
+    public void setCustomSprite(String filename) {
+        BufferedImage customSprite = SpriteManager.loadSprite(filename);
+        if (customSprite != null) {
+            sprite = customSprite;
+        }
+    }
+    
+    /**
+     * Set a custom sprite using a color and shape
+     * @param color Sprite color
+     * @param shape "circle", "triangle", "diamond", "square"
+     */
+    public void setCustomSprite(Color color, String shape) {
+        sprite = SpriteManager.createShapeSprite(color, shape);
     }
     
     public void update() {

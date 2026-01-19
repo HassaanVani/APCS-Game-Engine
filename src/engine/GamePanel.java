@@ -17,6 +17,10 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int SCREEN_WIDTH = TILE_SIZE * SCREEN_COL;  // 768 pixels
     public static final int SCREEN_HEIGHT = TILE_SIZE * SCREEN_ROW; // 576 pixels
     
+    // Camera system for multi-screen levels
+    private int cameraX = 0;
+    private int cameraY = 0;
+    
     // Game loop
     private Thread gameThread;
     private final int FPS = 60;
@@ -60,6 +64,9 @@ public class GamePanel extends JPanel implements Runnable {
         this.currentLevel = level;
         level.initialize(this);
         player.setPosition(level.getStartX(), level.getStartY());
+        
+        // Reset camera to starting position
+        updateCamera();
     }
     
     /**
@@ -124,6 +131,9 @@ public class GamePanel extends JPanel implements Runnable {
         if (gameState == GameState.PLAYING) {
             player.update();
             
+            // Update camera to follow player
+            updateCamera();
+            
             // Check collisions with level
             if (currentLevel != null) {
                 currentLevel.checkCollisions(player);
@@ -160,6 +170,9 @@ public class GamePanel extends JPanel implements Runnable {
         Graphics2D g2 = (Graphics2D) g;
         
         if (gameState == GameState.PLAYING) {
+            // Apply camera translation
+            g2.translate(-cameraX, -cameraY);
+            
             // Draw level
             if (currentLevel != null) {
                 currentLevel.render(g2);
@@ -168,6 +181,9 @@ public class GamePanel extends JPanel implements Runnable {
             // Draw player
             player.render(g2);
             
+            // Reset translation for UI
+            g2.translate(cameraX, cameraY);
+            
             // Draw UI (health bar, etc)
             drawUI(g2);
         } else if (gameState == GameState.BATTLE) {
@@ -175,6 +191,32 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         g2.dispose();
+    }
+    
+    /**
+     * Update camera position to follow player (Pokemon-style screen transitions)
+     * Camera snaps to screen boundaries
+     */
+    private void updateCamera() {
+        if (currentLevel == null) return;
+        
+        int playerCenterX = player.getWorldX() + TILE_SIZE / 2;
+        int playerCenterY = player.getWorldY() + TILE_SIZE / 2;
+        
+        // Calculate which screen the player is on
+        int screenX = playerCenterX / SCREEN_WIDTH;
+        int screenY = playerCenterY / SCREEN_HEIGHT;
+        
+        // Snap camera to that screen
+        int targetCameraX = screenX * SCREEN_WIDTH;
+        int targetCameraY = screenY * SCREEN_HEIGHT;
+        
+        // Clamp camera to level bounds
+        int maxCameraX = Math.max(0, currentLevel.getMapWidth() * TILE_SIZE - SCREEN_WIDTH);
+        int maxCameraY = Math.max(0, currentLevel.getMapHeight() * TILE_SIZE - SCREEN_HEIGHT);
+        
+        cameraX = Math.max(0, Math.min(targetCameraX, maxCameraX));
+        cameraY = Math.max(0, Math.min(targetCameraY, maxCameraY));
     }
     
     private void drawUI(Graphics2D g2) {
@@ -212,6 +254,8 @@ public class GamePanel extends JPanel implements Runnable {
         gameState = GameState.PLAYING;
         if (playerWon && currentLevel != null) {
             currentLevel.onEnemyDefeated(battleSystem.getCurrentEnemy());
+        } else{
+            player.setPosition(player.getWorldX()-GamePanel.TILE_SIZE, player.getWorldY());
         }
     }
     
