@@ -14,6 +14,7 @@ public class JuppyCavernLevel extends GameLevel {
         super("Jupvir's Cavern", 16, 12);
         startX = 100;
         startY = 400;
+        bgmFilename = "cave.wav";
     }
     
     @Override

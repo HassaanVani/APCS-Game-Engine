@@ -13,11 +13,13 @@ public class BattleSystem {
     private BattleState state = BattleState.INTRO;
     private String message = "";
     private int messageTimer = 0;
-    private int selectedAction = 0; // 0=Fight, 1=Run
+    private int selectedAction = 0; // 0=Fight, 1=Item, 2=Run
+    private int selectedItemIndex = 0;
     
     private enum BattleState {
         INTRO,
         PLAYER_TURN,
+        ITEM_SELECT,
         ENEMY_TURN,
         VICTORY,
         DEFEAT
@@ -55,33 +57,91 @@ public class BattleSystem {
                 break;
                 
             case PLAYER_TURN:
-                // Navigate menu
+                // Navigate menu (FIGHT, ITEM, RUN)
                 if (keys.leftPressed) {
-                    selectedAction = 0;
+                    selectedAction = (selectedAction - 1 + 3) % 3;
                     keys.leftPressed = false;
                 } else if (keys.rightPressed) {
-                    selectedAction = 1;
+                    selectedAction = (selectedAction + 1) % 3;
                     keys.rightPressed = false;
                 }
                 
                 // Select action
                 if (keys.spacePressed || keys.enterPressed) {
+                    keys.spacePressed = false;
+                    keys.enterPressed = false;
+                    
                     if (selectedAction == 0) {
                         // Fight
                         playerAttack();
+                    } else if (selectedAction == 1) {
+                        // Items
+                        if (player.getInventory().isEmpty()) {
+                            message = "No items in inventory!";
+                            messageTimer = 45;
+                        } else {
+                            state = BattleState.ITEM_SELECT;
+                            selectedItemIndex = 0;
+                        }
                     } else {
+                        // Run
                         if (Math.random() < enemy.getRunChance()) {
+                            SoundManager.playSE("run.wav");
                             message = "Got away safely!";
                             messageTimer = 60;
                             gamePanel.endBattle(false);
                         } else {
+                            SoundManager.playSE("hit.wav");
                             message = "Can't escape!";
                             messageTimer = 40;
                             state = BattleState.ENEMY_TURN;
                         }
                     }
+                }
+                break;
+                
+            case ITEM_SELECT:
+                int itemCount = player.getInventory().size();
+                
+                // Scroll inventory
+                if (keys.upPressed) {
+                    selectedItemIndex = (selectedItemIndex - 1 + itemCount) % itemCount;
+                    keys.upPressed = false;
+                } else if (keys.downPressed) {
+                    selectedItemIndex = (selectedItemIndex + 1) % itemCount;
+                    keys.downPressed = false;
+                }
+                
+                // Cancel
+                if (keys.escapePressed) {
+                    state = BattleState.PLAYER_TURN;
+                    message = "What will you do?";
+                    keys.escapePressed = false;
+                }
+                
+                // Confirm Use
+                if (keys.spacePressed || keys.enterPressed) {
                     keys.spacePressed = false;
                     keys.enterPressed = false;
+                    
+                    if (itemCount > 0) {
+                        Item item = player.getInventory().get(selectedItemIndex);
+                        item.use(player);
+                        player.removeItem(item);
+                        
+                        // Play heal or stat SE
+                        if (item.getType() == Item.ItemType.POTION) {
+                            SoundManager.playSE("heal.wav");
+                        } else {
+                            SoundManager.playSE("buff.wav");
+                        }
+                        
+                        message = "Used " + item.getName() + "!";
+                        messageTimer = 60;
+                        state = BattleState.ENEMY_TURN;
+                    } else {
+                        state = BattleState.PLAYER_TURN;
+                    }
                 }
                 break;
                 
@@ -110,11 +170,13 @@ public class BattleSystem {
     private void playerAttack() {
         int damage = player.attack();
         enemy.takeDamage(damage);
+        SoundManager.playSE("hit.wav");
         message = "You dealt " + damage + " damage!";
         messageTimer = 60;
         
         if (!enemy.isAlive()) {
             state = BattleState.VICTORY;
+            SoundManager.playSE("victory.wav");
             message = enemy.getName() + " defeated! Gained " + enemy.getExpReward() + " EXP!";
         } else {
             state = BattleState.ENEMY_TURN;
@@ -123,11 +185,13 @@ public class BattleSystem {
     
     private void enemyAttack() {
         String action = enemy.performBattleAction(player);
+        SoundManager.playSE("hit.wav");
         message = action;
         messageTimer = 60;
         
         if (!player.isAlive()) {
             state = BattleState.DEFEAT;
+            SoundManager.playSE("defeat.wav");
             message = "You were defeated!";
         } else {
             state = BattleState.PLAYER_TURN;
@@ -167,6 +231,11 @@ public class BattleSystem {
         // Draw action menu if player's turn
         if (state == BattleState.PLAYER_TURN) {
             drawActionMenu(g2);
+        }
+        
+        // Draw inventory menu if selecting item
+        if (state == BattleState.ITEM_SELECT) {
+            drawInventoryMenu(g2);
         }
     }
     
@@ -224,17 +293,58 @@ public class BattleSystem {
     }
     
     private void drawActionMenu(Graphics2D g2) {
-        int menuX = GamePanel.SCREEN_WIDTH / 2 + 50;
+        int menuX = GamePanel.SCREEN_WIDTH / 2 - 120;
         int menuY = GamePanel.SCREEN_HEIGHT - 125;
-        int buttonWidth = 120;
+        int buttonWidth = 110;
         int buttonHeight = 50;
-        int spacing = 20;
+        int spacing = 15;
         
         // Fight button
         drawButton(g2, "FIGHT", menuX, menuY, buttonWidth, buttonHeight, selectedAction == 0);
         
+        // Item button
+        drawButton(g2, "ITEM", menuX + buttonWidth + spacing, menuY, buttonWidth, buttonHeight, selectedAction == 1);
+        
         // Run button
-        drawButton(g2, "RUN", menuX + buttonWidth + spacing, menuY, buttonWidth, buttonHeight, selectedAction == 1);
+        drawButton(g2, "RUN", menuX + (buttonWidth + spacing) * 2, menuY, buttonWidth, buttonHeight, selectedAction == 2);
+    }
+    
+    private void drawInventoryMenu(Graphics2D g2) {
+        int boxX = 50;
+        int boxY = GamePanel.SCREEN_HEIGHT - 280;
+        int boxWidth = 300;
+        int boxHeight = 120;
+        
+        // Dark translucent inventory background
+        g2.setColor(new Color(0, 0, 0, 220));
+        g2.fillRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // White border
+        g2.setColor(Color.WHITE);
+        g2.setStroke(new BasicStroke(2));
+        g2.drawRect(boxX, boxY, boxWidth, boxHeight);
+        
+        g2.setFont(new Font("Consolas", Font.BOLD, 14));
+        g2.drawString("INVENTORY (ESC to back):", boxX + 15, boxY + 25);
+        
+        java.util.ArrayList<Item> inv = player.getInventory();
+        int itemCount = inv.size();
+        
+        int startIdx = Math.max(0, selectedItemIndex - 2);
+        int endIdx = Math.min(itemCount, startIdx + 3);
+        
+        int itemY = boxY + 50;
+        for (int i = startIdx; i < endIdx; i++) {
+            Item item = inv.get(i);
+            if (i == selectedItemIndex) {
+                g2.setColor(new Color(100, 150, 255));
+                g2.drawString("> " + item.getName(), boxX + 20, itemY);
+            } else {
+                g2.setColor(Color.WHITE);
+                g2.drawString("  " + item.getName(), boxX + 20, itemY);
+            }
+            itemY += 20;
+        }
     }
     
     private void drawButton(Graphics2D g2, String text, int x, int y, int width, int height, boolean selected) {

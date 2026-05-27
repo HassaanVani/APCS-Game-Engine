@@ -14,6 +14,7 @@ public class ForestLevel extends GameLevel {
         super("Forest Zone", 16, 12);  // 16x12 tiles (fits screen perfectly)
         startX = 100;
         startY = 100;
+        bgmFilename = "forest.wav";
     }
     
     @Override
@@ -48,6 +49,34 @@ public class ForestLevel extends GameLevel {
         for (int x = 2; x < 14; x++) {
             setTile(x, 6, 3);
         }
+        
+        // Add interactables
+        // 1. Signpost giving instructions
+        Signpost sign = new Signpost(
+            3 * GamePanel.TILE_SIZE, 
+            4 * GamePanel.TILE_SIZE, 
+            "=== DIRECTION SIGN ===\nFollow the path east to find the cavern.\nWatch out for the aggressive bats!"
+        );
+        addInteractable(sign);
+        
+        // 2. Treasure chest with a Health Potion
+        Item potion = new Item("Health Potion", "Restores 50 HP.", Item.ItemType.POTION, 50);
+        Chest chest = new Chest(
+            11 * GamePanel.TILE_SIZE, 
+            4 * GamePanel.TILE_SIZE, 
+            potion
+        );
+        addInteractable(chest);
+        
+        // 3. Friendly Wizard NPC
+        NPC wizard = new NPC(
+            "Elder Eldrin",
+            7 * GamePanel.TILE_SIZE,
+            3 * GamePanel.TILE_SIZE,
+            new Color(147, 112, 219), // Purple wizard robes
+            "Greetings, adventurer!\nI have infused the bat in this forest with\npursuit intelligence. It will chase you!\nFind the potion in the chest to heal."
+        );
+        addInteractable(wizard);
     }
     
     @Override
@@ -63,7 +92,14 @@ public class ForestLevel extends GameLevel {
         
         Slime slime3 = new Slime();
         slime3.setPosition(600, 400);
+        slime3.setInvisible(true);
         addEnemy(slime3);
+        
+        // Pathfinding Chase AI Bat
+        Bat bat = new Bat();
+        bat.setPosition(500, 300);
+        bat.setAIBehavior(Enemy.AIBehavior.CHASE);
+        addEnemy(bat);
     }
     
     @Override

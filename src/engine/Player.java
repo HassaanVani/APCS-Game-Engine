@@ -8,16 +8,17 @@ import java.awt.image.BufferedImage;
  */
 public class Player extends Entity {
     private KeyHandler keyHandler;
-    private int speed = 4;
     
     // Stats
     private int level = 1;
     private int experience = 0;
     private int gold = 0;
+    private java.util.ArrayList<Item> inventory = new java.util.ArrayList<>();
     
     public Player(KeyHandler keyHandler) {
         super("Player", 100, 15, 10);
         this.keyHandler = keyHandler;
+        this.speed = 4;
         
         worldX = 100;
         worldY = 100;
@@ -55,19 +56,33 @@ public class Player extends Entity {
         int oldX = worldX;
         int oldY = worldY;
         
+        boolean moving = false;
+        
         // Movement
         if (keyHandler.upPressed) {
             worldY -= speed;
             direction = Direction.UP;
+            moving = true;
         } else if (keyHandler.downPressed) {
             worldY += speed;
             direction = Direction.DOWN;
+            moving = true;
         } else if (keyHandler.leftPressed) {
             worldX -= speed;
             direction = Direction.LEFT;
+            moving = true;
         } else if (keyHandler.rightPressed) {
             worldX += speed;
             direction = Direction.RIGHT;
+            moving = true;
+        }
+        
+        if (moving) {
+            animTick++;
+            bobOffset = (int)(Math.sin(animTick * 0.25) * 4);
+        } else {
+            bobOffset = 0;
+            animTick = 0;
         }
         
         // Store old position for potential collision rollback
@@ -76,17 +91,12 @@ public class Player extends Entity {
     }
     
     public void render(Graphics2D g2) {
-        g2.drawImage(sprite, worldX, worldY, null);
+        g2.drawImage(sprite, worldX, worldY + bobOffset, null);
     }
     
     public void setPosition(int x, int y) {
         this.worldX = x;
         this.worldY = y;
-    }
-    
-    public void rollbackPosition() {
-        worldX = oldX;
-        worldY = oldY;
     }
     
     public void gainExperience(int exp) {
@@ -121,4 +131,24 @@ public class Player extends Entity {
     public int getSpeed() { return speed; }
     public int getWorldX() { return worldX; }
     public int getWorldY() { return worldY; }
+    
+    public void addItem(Item item) {
+        inventory.add(item);
+    }
+    
+    public void removeItem(Item item) {
+        inventory.remove(item);
+    }
+    
+    public java.util.ArrayList<Item> getInventory() {
+        return inventory;
+    }
+    
+    public void increaseAttack(int amount) {
+        attackPower += amount;
+    }
+    
+    public void increaseDefense(int amount) {
+        defense += amount;
+    }
 }

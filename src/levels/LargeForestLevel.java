@@ -15,6 +15,7 @@ public class LargeForestLevel extends GameLevel {
         super("Large Forest", 32, 24);  // 2x2 screens
         startX = 100;
         startY = 100;
+        bgmFilename = "forest.wav";
     }
     
     @Override

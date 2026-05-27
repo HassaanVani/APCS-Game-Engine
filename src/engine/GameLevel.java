@@ -27,11 +27,17 @@ public abstract class GameLevel {
     // Enemies in this level
     protected ArrayList<Enemy> enemies = new ArrayList<>();
     
+    // Interactable objects in this level
+    protected ArrayList<Interactable> interactables = new ArrayList<>();
+    
     // Start position for player
     protected int startX, startY;
     
     // LevelBuilder helper for students
     protected LevelBuilder builder;
+    
+    // Level specific background music
+    protected String bgmFilename = "overworld.wav";
     
     public GameLevel(String levelName, int mapWidth, int mapHeight) {
         this.levelName = levelName;
@@ -61,12 +67,22 @@ public abstract class GameLevel {
         setupEnemies();
     }
     
-    /**
-     * Render the level (tiles, enemies, etc)
-     */
+    public void update() {
+        for (Enemy enemy : enemies) {
+            if (!enemy.isDefeated()) {
+                enemy.update(gamePanel.getPlayer(), this);
+            }
+        }
+    }
+    
     public void render(Graphics2D g2) {
         // Draw tiles
         renderTiles(g2);
+        
+        // Draw interactables
+        for (Interactable obj : interactables) {
+            obj.render(g2);
+        }
         
         // Draw enemies
         for (Enemy enemy : enemies) {
@@ -132,20 +148,33 @@ public abstract class GameLevel {
     /**
      * Check collisions with level tiles
      */
-    public void checkCollisions(Player player) {
-        Rectangle playerBox = player.getCollisionBox();
+    public void checkCollisions(Entity entity) {
+        Rectangle entityBox = entity.getCollisionBox();
         
-        // Check all four corners of player's collision box
-        int leftTile = (playerBox.x) / GamePanel.TILE_SIZE;
-        int rightTile = (playerBox.x + playerBox.width) / GamePanel.TILE_SIZE;
-        int topTile = (playerBox.y) / GamePanel.TILE_SIZE;
-        int bottomTile = (playerBox.y + playerBox.height) / GamePanel.TILE_SIZE;
+        // Check all four corners of entity's collision box
+        int leftTile = (entityBox.x) / GamePanel.TILE_SIZE;
+        int rightTile = (entityBox.x + entityBox.width) / GamePanel.TILE_SIZE;
+        int topTile = (entityBox.y) / GamePanel.TILE_SIZE;
+        int bottomTile = (entityBox.y + entityBox.height) / GamePanel.TILE_SIZE;
         
         // Check if any corner is in a solid tile
         if (isTileSolid(leftTile, topTile) || isTileSolid(rightTile, topTile) ||
             isTileSolid(leftTile, bottomTile) || isTileSolid(rightTile, bottomTile)) {
-            player.rollbackPosition();
+            entity.rollbackPosition();
+            return;
         }
+        
+        // Check collision with solid interactables
+        for (Interactable obj : interactables) {
+            if (obj != entity && obj.isSolid() && entity.intersects(obj)) {
+                entity.rollbackPosition();
+                break;
+            }
+        }
+    }
+    
+    protected void addInteractable(Interactable obj) {
+        interactables.add(obj);
     }
     
     /**
@@ -227,6 +256,7 @@ public abstract class GameLevel {
     }
     
     // Getters
+    public String getBGMFilename() { return bgmFilename; }
     public String getLevelName() { return levelName; }
     public int getStartX() { return startX; }
     public int getStartY() { return startY; }

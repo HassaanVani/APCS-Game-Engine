@@ -14,6 +14,7 @@ public class CaveLevel extends GameLevel {
         super("Cave Zone", 16, 12);
         startX = 100;
         startY = 500;
+        bgmFilename = "cave.wav";
     }
     
     @Override

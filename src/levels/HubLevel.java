@@ -15,6 +15,7 @@ public class HubLevel extends GameLevel {
         super("Central Hub", calculateWidth(), calculateHeight());
         startX = GamePanel.TILE_SIZE * 2;
         startY = GamePanel.TILE_SIZE * 2;
+        bgmFilename = "hub.wav";
     }
     
     private static int calculateWidth() {

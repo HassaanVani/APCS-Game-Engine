@@ -35,12 +35,14 @@ public class GamePanel extends JPanel implements Runnable {
     // Level management
     private java.util.HashMap<String, GameLevel> levels = new java.util.HashMap<>();
     private GameLevel hubLevel;
+    private String currentDialogue = "";
     
     public enum GameState {
         PLAYING,
         BATTLE,
         PAUSED,
-        MENU
+        MENU,
+        DIALOGUE
     }
     
     public GamePanel() {
@@ -67,6 +69,11 @@ public class GamePanel extends JPanel implements Runnable {
         
         // Reset camera to starting position
         updateCamera();
+        
+        // Play level specific BGM
+        if (level.getBGMFilename() != null) {
+            SoundManager.playBGM(level.getBGMFilename());
+        }
     }
     
     /**
@@ -134,11 +141,10 @@ public class GamePanel extends JPanel implements Runnable {
             // Update camera to follow player
             updateCamera();
             
-            // Check collisions with level
             if (currentLevel != null) {
+                currentLevel.update();
                 currentLevel.checkCollisions(player);
-                
-                // Check for door transitions (if we're in hub)
+
                 if (currentLevel instanceof levels.HubLevel) {
                     levels.HubLevel hub = (levels.HubLevel) currentLevel;
                     Door door = hub.checkDoorCollision(player);
@@ -154,14 +160,55 @@ public class GamePanel extends JPanel implements Runnable {
                 }
             }
             
+            // Handle overworld interaction (SPACE or ENTER)
+            if (keyHandler.spacePressed || keyHandler.enterPressed) {
+                checkInteraction();
+                keyHandler.spacePressed = false;
+                keyHandler.enterPressed = false;
+            }
+            
             // ESC key returns to hub
             if (keyHandler.escapePressed && currentLevel != hubLevel) {
                 returnToHub();
                 keyHandler.escapePressed = false;
             }
+        } else if (gameState == GameState.DIALOGUE) {
+            if (keyHandler.spacePressed || keyHandler.enterPressed) {
+                gameState = GameState.PLAYING;
+                keyHandler.spacePressed = false;
+                keyHandler.enterPressed = false;
+            }
         } else if (gameState == GameState.BATTLE) {
             battleSystem.update();
         }
+    }
+    
+    private void checkInteraction() {
+        if (currentLevel == null) return;
+        
+        int targetX = player.getWorldX();
+        int targetY = player.getWorldY();
+        int reach = TILE_SIZE;
+        
+        switch (player.direction) {
+            case UP:    targetY -= reach; break;
+            case DOWN:  targetY += reach; break;
+            case LEFT:  targetX -= reach; break;
+            case RIGHT: targetX += reach; break;
+        }
+        
+        Rectangle interactArea = new Rectangle(targetX + 8, targetY + 8, 32, 32);
+        for (Interactable obj : currentLevel.interactables) {
+            if (obj.getCollisionBox().intersects(interactArea)) {
+                obj.onInteract(player, this);
+                break;
+            }
+        }
+    }
+    
+    public void showDialogue(String text) {
+        this.currentDialogue = text;
+        this.gameState = GameState.DIALOGUE;
     }
     
     @Override
@@ -169,7 +216,7 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         
-        if (gameState == GameState.PLAYING) {
+        if (gameState == GameState.PLAYING || gameState == GameState.DIALOGUE) {
             // Apply camera translation
             g2.translate(-cameraX, -cameraY);
             
@@ -186,11 +233,47 @@ public class GamePanel extends JPanel implements Runnable {
             
             // Draw UI (health bar, etc)
             drawUI(g2);
+            
+            // Draw dialogue box if in dialogue state
+            if (gameState == GameState.DIALOGUE) {
+                drawDialogueBox(g2);
+            }
         } else if (gameState == GameState.BATTLE) {
             battleSystem.render(g2);
         }
         
         g2.dispose();
+    }
+    
+    private void drawDialogueBox(Graphics2D g2) {
+        int boxX = TILE_SIZE * 2;
+        int boxY = SCREEN_HEIGHT - TILE_SIZE * 3 - 20;
+        int boxWidth = SCREEN_WIDTH - TILE_SIZE * 4;
+        int boxHeight = TILE_SIZE * 2 + 10;
+        
+        // Translucent dark box background
+        g2.setColor(new Color(0, 0, 0, 220));
+        g2.fillRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // White border
+        g2.setColor(Color.WHITE);
+        g2.setStroke(new BasicStroke(3));
+        g2.drawRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Text rendering
+        g2.setFont(new Font("Consolas", Font.PLAIN, 16));
+        g2.setColor(Color.WHITE);
+        
+        int textX = boxX + 20;
+        int textY = boxY + 35;
+        for (String line : currentDialogue.split("\n")) {
+            g2.drawString(line, textX, textY);
+            textY += 22;
+        }
+        
+        // Advance hint
+        g2.setFont(new Font("Consolas", Font.ITALIC, 11));
+        g2.drawString("Press SPACE/ENTER to continue", boxX + boxWidth - 215, boxY + boxHeight - 12);
     }
     
     /**
@@ -246,6 +329,8 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     public void startBattle(Enemy enemy) {
+        SoundManager.playSE("encounter.wav");
+        SoundManager.playBGM("battle.wav");
         gameState = GameState.BATTLE;
         battleSystem.startBattle(player, enemy);
     }
@@ -256,6 +341,11 @@ public class GamePanel extends JPanel implements Runnable {
             currentLevel.onEnemyDefeated(battleSystem.getCurrentEnemy());
         } else{
             player.setPosition(player.getWorldX()-GamePanel.TILE_SIZE, player.getWorldY());
+        }
+        
+        // Restore level specific BGM
+        if (currentLevel != null && currentLevel.getBGMFilename() != null) {
+            SoundManager.playBGM(currentLevel.getBGMFilename());
         }
     }
     

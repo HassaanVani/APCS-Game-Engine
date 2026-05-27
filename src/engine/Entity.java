@@ -10,6 +10,7 @@ public abstract class Entity {
     // Position in game world
     protected int worldX, worldY;
     protected int oldX, oldY; // For collision rollback
+    protected int speed = 1;
     
     // Collision box (relative to sprite position)
     protected Rectangle solidArea = new Rectangle(8, 8, 32, 32);
@@ -19,6 +20,8 @@ public abstract class Entity {
     protected BufferedImage[] walkSprites = new BufferedImage[4]; // up, down, left, right
     protected int spriteCounter = 0;
     protected int spriteNum = 1;
+    protected int animTick = 0;
+    protected int bobOffset = 0;
     
     // Direction
     protected Direction direction = Direction.DOWN;
@@ -79,4 +82,9 @@ public abstract class Entity {
     public void setHealth(int health) { this.health = Math.max(0, Math.min(health, maxHealth)); }
     public BufferedImage getSprite() { return sprite; }
     public void setSprite(BufferedImage sprite) { this.sprite = sprite; }
+    
+    public void rollbackPosition() {
+        worldX = oldX;
+        worldY = oldY;
+    }
 }

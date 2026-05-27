@@ -14,6 +14,7 @@ public class DemoLevel extends GameLevel {
         super("Demo Level - LevelBuilder Showcase", 16, 12);
         startX = 100;
         startY = 100;
+        bgmFilename = "demo.wav";
     }
     
     @Override
