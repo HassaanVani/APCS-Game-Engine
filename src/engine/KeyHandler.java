@@ -8,7 +8,7 @@ import java.awt.event.KeyListener;
  */
 public class KeyHandler implements KeyListener {
     public boolean upPressed, downPressed, leftPressed, rightPressed;
-    public boolean enterPressed, escapePressed, spacePressed;
+    public boolean enterPressed, escapePressed, spacePressed, cPressed, xPressed;
     
     @Override
     public void keyTyped(KeyEvent e) {
@@ -42,6 +42,12 @@ public class KeyHandler implements KeyListener {
         if (code == KeyEvent.VK_SPACE) {
             spacePressed = true;
         }
+        if (code == KeyEvent.VK_C) {
+            cPressed = true;
+        }
+        if (code == KeyEvent.VK_X) {
+            xPressed = true;
+        }
     }
     
     @Override
@@ -68,6 +74,12 @@ public class KeyHandler implements KeyListener {
         }
         if (code == KeyEvent.VK_SPACE) {
             spacePressed = false;
+        }
+        if (code == KeyEvent.VK_C) {
+            cPressed = false;
+        }
+        if (code == KeyEvent.VK_X) {
+            xPressed = false;
         }
     }
 }

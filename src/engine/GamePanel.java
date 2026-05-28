@@ -134,9 +134,63 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
     
+    private int shootCooldown = 0;
+    
     private void update() {
         if (gameState == GameState.PLAYING) {
+            if (shootCooldown > 0) shootCooldown--;
             player.update();
+            
+            // Check for overworld sword attacks
+            if (keyHandler.cPressed && player.hasSword() && player.getSwordSwingActiveFrames() == 0) {
+                player.startSwordSwing();
+                SoundManager.playSE("swing.wav");
+                
+                int range = TILE_SIZE;
+                int hitX = player.getWorldX();
+                int hitY = player.getWorldY();
+                switch (player.direction) {
+                    case UP:    hitY -= range; break;
+                    case DOWN:  hitY += range; break;
+                    case LEFT:  hitX -= range; break;
+                    case RIGHT: hitX += range; break;
+                }
+                
+                Rectangle swordBox = new Rectangle(hitX + 8, hitY + 8, 32, 32);
+                if (currentLevel != null) {
+                    // Check hits on overworld or hybrid enemies
+                    for (int i = 0; i < currentLevel.getEnemies().size(); i++) {
+                        Enemy enemy = currentLevel.getEnemies().get(i);
+                        if (!enemy.isDefeated() && 
+                            (enemy.getEncounterType() == Enemy.EncounterType.OVERWORLD_ACTION || 
+                             enemy.getEncounterType() == Enemy.EncounterType.HYBRID)) {
+                            if (enemy.getCollisionBox().intersects(swordBox)) {
+                                enemy.takeDamage(player.getAttackPower());
+                                SoundManager.playSE("hit.wav");
+                                if (!enemy.isAlive()) {
+                                    currentLevel.onEnemyDefeated(enemy);
+                                }
+                            }
+                        }
+                    }
+                }
+                keyHandler.cPressed = false;
+            }
+            
+            // Check for overworld bow attacks
+            if (keyHandler.xPressed && player.hasBow() && player.getArrows() > 0 && shootCooldown == 0) {
+                shootCooldown = 30; // 30 frames cooldown (0.5s)
+                player.addArrows(-1);
+                SoundManager.playSE("shoot.wav");
+                
+                int pX = player.getWorldX() + (TILE_SIZE - 8) / 2;
+                int pY = player.getWorldY() + (TILE_SIZE - 8) / 2;
+                Projectile proj = new Projectile(pX, pY, player.direction, player.getAttackPower());
+                if (currentLevel != null) {
+                    currentLevel.addProjectile(proj);
+                }
+                keyHandler.xPressed = false;
+            }
             
             // Update camera to follow player
             updateCamera();
@@ -228,6 +282,29 @@ public class GamePanel extends JPanel implements Runnable {
             // Draw player
             player.render(g2);
             
+            // Draw sword swing effect
+            if (player.getSwordSwingActiveFrames() > 0) {
+                g2.setColor(new Color(255, 255, 255, 180));
+                g2.setStroke(new BasicStroke(3));
+                int swingX = player.getWorldX();
+                int swingY = player.getWorldY();
+                
+                switch (player.direction) {
+                    case UP:
+                        g2.drawArc(swingX - 8, swingY - 16, TILE_SIZE + 16, TILE_SIZE, 30, 120);
+                        break;
+                    case DOWN:
+                        g2.drawArc(swingX - 8, swingY + 16, TILE_SIZE + 16, TILE_SIZE, 210, 120);
+                        break;
+                    case LEFT:
+                        g2.drawArc(swingX - 16, swingY - 8, TILE_SIZE, TILE_SIZE + 16, 120, 120);
+                        break;
+                    case RIGHT:
+                        g2.drawArc(swingX + 16, swingY - 8, TILE_SIZE, TILE_SIZE + 16, 300, 120);
+                        break;
+                }
+            }
+            
             // Reset translation for UI
             g2.translate(cameraX, cameraY);
             
@@ -266,7 +343,8 @@ public class GamePanel extends JPanel implements Runnable {
         
         int textX = boxX + 20;
         int textY = boxY + 35;
-        for (String line : currentDialogue.split("\n")) {
+        java.util.List<String> lines = wrapText(currentDialogue, g2.getFontMetrics(), boxWidth - 40);
+        for (String line : lines) {
             g2.drawString(line, textX, textY);
             textY += 22;
         }
@@ -274,6 +352,41 @@ public class GamePanel extends JPanel implements Runnable {
         // Advance hint
         g2.setFont(new Font("Consolas", Font.ITALIC, 11));
         g2.drawString("Press SPACE/ENTER to continue", boxX + boxWidth - 215, boxY + boxHeight - 12);
+    }
+    
+    /**
+     * Utility method to wrap text into multiple lines given font metrics and max width in pixels.
+     */
+    public static java.util.List<String> wrapText(String text, FontMetrics fm, int maxWidth) {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        if (text == null) return lines;
+        String[] paragraphs = text.split("\n", -1);
+        for (String paragraph : paragraphs) {
+            if (paragraph.isEmpty()) {
+                lines.add("");
+                continue;
+            }
+            String[] words = paragraph.split(" ");
+            StringBuilder currentLine = new StringBuilder();
+            for (String word : words) {
+                String testLine = currentLine.length() == 0 ? word : currentLine.toString() + " " + word;
+                int width = fm.stringWidth(testLine);
+                if (width > maxWidth) {
+                    if (currentLine.length() > 0) {
+                        lines.add(currentLine.toString());
+                        currentLine = new StringBuilder(word);
+                    } else {
+                        lines.add(word);
+                    }
+                } else {
+                    currentLine.append(currentLine.length() == 0 ? "" : " ").append(word);
+                }
+            }
+            if (currentLine.length() > 0) {
+                lines.add(currentLine.toString());
+            }
+        }
+        return lines;
     }
     
     /**
@@ -307,25 +420,52 @@ public class GamePanel extends JPanel implements Runnable {
         int barX = 20;
         int barY = 20;
         int barWidth = 200;
-        int barHeight = 20;
+        int barHeight = 16;
         
-        // Background
+        // Health Background
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
-        
         // Health bar
         g2.setColor(Color.RED);
         int healthWidth = (int) ((player.getHealth() / (double) player.getMaxHealth()) * barWidth);
         g2.fillRect(barX, barY, healthWidth, barHeight);
-        
-        // Border
+        // Health Border
         g2.setColor(Color.WHITE);
         g2.drawRect(barX, barY, barWidth, barHeight);
+        // Health Text
+        g2.setFont(new Font("Arial", Font.BOLD, 11));
+        g2.setColor(Color.WHITE);
+        g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 5, barY + 12);
         
-        // Text
-        g2.setFont(new Font("Arial", Font.BOLD, 12));
-        String healthText = player.getHealth() + " / " + player.getMaxHealth();
-        g2.drawString(healthText, barX + 5, barY + 15);
+        // Draw player mana bar
+        int manaY = 40;
+        // Mana Background
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRect(barX - 2, manaY - 2, barWidth + 4, barHeight + 4);
+        // Mana bar
+        g2.setColor(new Color(50, 150, 255));
+        int manaWidth = (int) ((player.getMana() / (double) player.getMaxMana()) * barWidth);
+        g2.fillRect(barX, manaY, manaWidth, barHeight);
+        // Mana Border
+        g2.setColor(Color.WHITE);
+        g2.drawRect(barX, manaY, barWidth, barHeight);
+        // Mana Text
+        g2.setColor(Color.WHITE);
+        g2.drawString("MP: " + player.getMana() + " / " + player.getMaxMana(), barX + 5, manaY + 12);
+        
+        // Draw weapons & ammo UI
+        if (player.hasSword() || player.hasBow()) {
+            g2.setColor(new Color(0, 0, 0, 150));
+            g2.fillRect(barX - 2, 60 - 2, 130, 22);
+            g2.setColor(Color.WHITE);
+            g2.drawRect(barX, 60, 126, 18);
+            
+            g2.setFont(new Font("Arial", Font.PLAIN, 10));
+            StringBuilder weaponText = new StringBuilder();
+            if (player.hasSword()) weaponText.append("Sword(C) ");
+            if (player.hasBow()) weaponText.append("Bow(X) x").append(player.getArrows());
+            g2.drawString(weaponText.toString().trim(), barX + 5, 72);
+        }
     }
     
     public void startBattle(Enemy enemy) {

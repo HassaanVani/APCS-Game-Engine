@@ -7,7 +7,10 @@ public class Item {
     public enum ItemType {
         POTION,        // Restores health
         BUFF_ATTACK,   // Permanently increases attack power
-        BUFF_DEFENSE   // Permanently increases defense
+        BUFF_DEFENSE,  // Permanently increases defense
+        SWORD,         // Unlocks sword swing in overworld
+        BOW,           // Unlocks bow & arrow firing
+        ARROW_AMMO     // Refills arrow count
     }
     
     private String name;
@@ -41,6 +44,18 @@ public class Item {
                 break;
             case BUFF_DEFENSE:
                 player.increaseDefense(value);
+                break;
+            case SWORD:
+                player.setHasSword(true);
+                System.out.println("Equipped Sword! Press C to swing.");
+                break;
+            case BOW:
+                player.setHasBow(true);
+                System.out.println("Equipped Bow! Press X to shoot.");
+                break;
+            case ARROW_AMMO:
+                player.addArrows(value);
+                System.out.println("Gained " + value + " arrows.");
                 break;
         }
     }

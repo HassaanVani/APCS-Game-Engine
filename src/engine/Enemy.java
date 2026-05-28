@@ -22,6 +22,20 @@ public abstract class Enemy extends Entity {
     }
     protected AIBehavior aiBehavior = AIBehavior.WANDER;
     
+    public enum EncounterType {
+        OVERWORLD_ACTION,
+        TURN_BASED,
+        HYBRID
+    }
+    protected EncounterType encounterType = EncounterType.TURN_BASED;
+    
+    public EncounterType getEncounterType() { return encounterType; }
+    public void setEncounterType(EncounterType type) { this.encounterType = type; }
+    
+    public int getTouchDamage() {
+        return Math.max(1, attackPower / 2);
+    }
+    
     public Enemy(String name, int maxHealth, int attackPower, int defense, int expReward, int goldReward, double runChance) {
         super(name, maxHealth, attackPower, defense);
         this.expReward = expReward;

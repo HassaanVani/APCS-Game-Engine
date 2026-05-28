@@ -16,9 +16,39 @@ public class BattleSystem {
     private int selectedAction = 0; // 0=Fight, 1=Item, 2=Run
     private int selectedItemIndex = 0;
     
+    // Combat Overhaul moves & QTE properties
+    public static class BattleMove {
+        public String name;
+        public int damagePower;
+        public int mpCost;
+        public double accuracy;
+        
+        public BattleMove(String name, int damagePower, int mpCost, double accuracy) {
+            this.name = name;
+            this.damagePower = damagePower;
+            this.mpCost = mpCost;
+            this.accuracy = accuracy;
+        }
+    }
+    
+    private static final BattleMove[] PLAYER_MOVES = {
+        new BattleMove("Slash", 15, 0, 1.00),
+        new BattleMove("Heavy Strike", 32, 5, 0.75),
+        new BattleMove("Guard", 0, 0, 1.00),
+        new BattleMove("Heal Spell", -30, 8, 1.00)
+    };
+    
+    private int selectedMoveIndex = 0;
+    private BattleMove currentChosenMove = null;
+    private double qteValue = 0.0;
+    private double qteSpeed = 0.06;
+    private boolean playerGuarding = false;
+    
     private enum BattleState {
         INTRO,
         PLAYER_TURN,
+        MOVE_SELECT,
+        QTE_INPUT,
         ITEM_SELECT,
         ENEMY_TURN,
         VICTORY,
@@ -36,6 +66,8 @@ public class BattleSystem {
         this.message = "A wild " + enemy.getName() + " appeared!";
         this.messageTimer = 60;
         this.selectedAction = 0;
+        this.playerGuarding = false;
+        this.selectedMoveIndex = 0;
     }
     
     public void update() {
@@ -72,8 +104,9 @@ public class BattleSystem {
                     keys.enterPressed = false;
                     
                     if (selectedAction == 0) {
-                        // Fight
-                        playerAttack();
+                        // Go to move select state
+                        state = BattleState.MOVE_SELECT;
+                        selectedMoveIndex = 0;
                     } else if (selectedAction == 1) {
                         // Items
                         if (player.getInventory().isEmpty()) {
@@ -96,6 +129,119 @@ public class BattleSystem {
                             messageTimer = 40;
                             state = BattleState.ENEMY_TURN;
                         }
+                    }
+                }
+                break;
+                
+            case MOVE_SELECT:
+                // Grid navigation for moves (2x2 grid)
+                if (keys.upPressed || keys.downPressed) {
+                    selectedMoveIndex ^= 1; // Toggle row (0<->1, 2<->3)
+                    keys.upPressed = false;
+                    keys.downPressed = false;
+                } else if (keys.leftPressed || keys.rightPressed) {
+                    selectedMoveIndex ^= 2; // Toggle col (0<->2, 1<->3)
+                    keys.leftPressed = false;
+                    keys.rightPressed = false;
+                }
+                
+                // Cancel
+                if (keys.escapePressed) {
+                    state = BattleState.PLAYER_TURN;
+                    message = "What will you do?";
+                    keys.escapePressed = false;
+                }
+                
+                // Confirm selection
+                if (keys.spacePressed || keys.enterPressed) {
+                    keys.spacePressed = false;
+                    keys.enterPressed = false;
+                    
+                    BattleMove move = PLAYER_MOVES[selectedMoveIndex];
+                    if (player.getMana() < move.mpCost) {
+                        SoundManager.playSE("hit.wav");
+                        message = "Not enough MP!";
+                        messageTimer = 45;
+                    } else {
+                        player.useMana(move.mpCost);
+                        currentChosenMove = move;
+                        
+                        if (move.name.equals("Guard")) {
+                            playerGuarding = true;
+                            SoundManager.playSE("buff.wav");
+                            message = "You raised your shield! Defense doubled next turn.";
+                            messageTimer = 60;
+                            state = BattleState.ENEMY_TURN;
+                        } else if (move.name.equals("Heal Spell")) {
+                            player.heal(30);
+                            SoundManager.playSE("heal.wav");
+                            message = "Cast Heal Spell! Restored 30 HP.";
+                            messageTimer = 60;
+                            state = BattleState.ENEMY_TURN;
+                        } else {
+                            // Damage deal -> enter QTE timing
+                            state = BattleState.QTE_INPUT;
+                            qteValue = 0.0;
+                            qteSpeed = move.name.equals("Slash") ? 0.05 : 0.08;
+                        }
+                    }
+                }
+                break;
+                
+            case QTE_INPUT:
+                // Oscillate slider value
+                qteValue += qteSpeed;
+                if (qteValue > 1.0) {
+                    qteValue = 1.0;
+                    qteSpeed = -qteSpeed;
+                } else if (qteValue < 0.0) {
+                    qteValue = 0.0;
+                    qteSpeed = -qteSpeed;
+                }
+                
+                // Stop input
+                if (keys.spacePressed || keys.enterPressed) {
+                    keys.spacePressed = false;
+                    keys.enterPressed = false;
+                    
+                    double diff = Math.abs(qteValue - 0.5);
+                    double multiplier = 0.5;
+                    String qteResult = "Weak Strike...";
+                    
+                    if (diff < 0.08) {
+                        multiplier = 1.5;
+                        qteResult = "CRITICAL HIT!";
+                        SoundManager.playSE("victory.wav"); // critical hit sound
+                    } else if (diff < 0.25) {
+                        multiplier = 1.0;
+                        qteResult = "Good Hit!";
+                        SoundManager.playSE("hit.wav");
+                    } else {
+                        if (currentChosenMove.name.equals("Heavy Strike")) {
+                            multiplier = 0.0;
+                            qteResult = "Missed!";
+                            SoundManager.playSE("hit.wav");
+                        } else {
+                            SoundManager.playSE("hit.wav");
+                        }
+                    }
+                    
+                    int finalDamage = (int)(currentChosenMove.damagePower * multiplier);
+                    if (finalDamage > 0) {
+                        enemy.takeDamage(finalDamage);
+                        message = qteResult + " You dealt " + finalDamage + " damage!";
+                    } else {
+                        message = currentChosenMove.name + " " + qteResult;
+                    }
+                    
+                    messageTimer = 60;
+                    
+                    if (!enemy.isAlive()) {
+                        state = BattleState.VICTORY;
+                        SoundManager.playSE("victory.wav");
+                        message = enemy.getName() + " defeated! Gained " + enemy.getExpReward() + " EXP!";
+                    } else {
+                        state = BattleState.ENEMY_TURN;
                     }
                 }
                 break;
@@ -184,10 +330,20 @@ public class BattleSystem {
     }
     
     private void enemyAttack() {
+        int oldDefense = player.getDefense();
+        if (playerGuarding) {
+            player.increaseDefense(oldDefense);
+        }
+        
         String action = enemy.performBattleAction(player);
         SoundManager.playSE("hit.wav");
         message = action;
         messageTimer = 60;
+        
+        if (playerGuarding) {
+            player.increaseDefense(-oldDefense);
+            playerGuarding = false;
+        }
         
         if (!player.isAlive()) {
             state = BattleState.DEFEAT;
@@ -221,7 +377,7 @@ public class BattleSystem {
             g2.drawImage(player.getSprite(), playerX, playerY, 
                         GamePanel.TILE_SIZE * 2, GamePanel.TILE_SIZE * 2, null);
             
-            // Player health bar
+            // Player health bar (includes MP bar inside drawHealthBar)
             drawHealthBar(g2, player, playerX, playerY - 30);
         }
         
@@ -233,6 +389,11 @@ public class BattleSystem {
             drawActionMenu(g2);
         }
         
+        // Draw move selection menu if selecting move
+        if (state == BattleState.MOVE_SELECT) {
+            drawMoveMenu(g2);
+        }
+        
         // Draw inventory menu if selecting item
         if (state == BattleState.ITEM_SELECT) {
             drawInventoryMenu(g2);
@@ -241,7 +402,7 @@ public class BattleSystem {
     
     private void drawHealthBar(Graphics2D g2, Entity entity, int x, int y) {
         int barWidth = 150;
-        int barHeight = 20;
+        int barHeight = 16;
         
         // Name
         g2.setColor(Color.WHITE);
@@ -262,9 +423,33 @@ public class BattleSystem {
         g2.drawRect(x, y, barWidth, barHeight);
         
         // Text
-        g2.setFont(new Font("Arial", Font.PLAIN, 12));
-        String hpText = entity.getHealth() + "/" + entity.getMaxHealth();
-        g2.drawString(hpText, x + 5, y + 15);
+        g2.setFont(new Font("Arial", Font.PLAIN, 11));
+        g2.setColor(Color.WHITE);
+        String hpText = "HP: " + entity.getHealth() + "/" + entity.getMaxHealth();
+        g2.drawString(hpText, x + 5, y + 12);
+        
+        // Draw MP bar if it's the Player
+        if (entity instanceof Player) {
+            Player p = (Player) entity;
+            int mpY = y + 20;
+            // Background
+            g2.setColor(Color.DARK_GRAY);
+            g2.fillRect(x, mpY, barWidth, barHeight);
+            
+            // Mana
+            g2.setColor(new Color(50, 150, 255));
+            int manaWidth = (int) ((p.getMana() / (double) p.getMaxMana()) * barWidth);
+            g2.fillRect(x, mpY, manaWidth, barHeight);
+            
+            // Border
+            g2.setColor(Color.WHITE);
+            g2.drawRect(x, mpY, barWidth, barHeight);
+            
+            // Text
+            g2.setColor(Color.WHITE);
+            String mpText = "MP: " + p.getMana() + "/" + p.getMaxMana();
+            g2.drawString(mpText, x + 5, mpY + 12);
+        }
     }
     
     private void drawMessageBox(Graphics2D g2) {
@@ -281,23 +466,102 @@ public class BattleSystem {
         g2.setColor(Color.WHITE);
         g2.drawRect(boxX, boxY, boxWidth, boxHeight);
         
-        // Message text
-        g2.setFont(new Font("Consolas", Font.PLAIN, 18));
-        g2.drawString(message, boxX + 20, boxY + 40);
+        if (state == BattleState.QTE_INPUT) {
+            g2.setFont(new Font("Consolas", Font.BOLD, 14));
+            g2.setColor(Color.WHITE);
+            g2.drawString("TIME YOUR STRIKE! Press SPACE:", boxX + 20, boxY + 30);
+            
+            int sliderX = boxX + 20;
+            int sliderY = boxY + 45;
+            int sliderW = boxWidth - 40; // 628 wide
+            int sliderH = 22;
+            
+            // Draw background bar (gray)
+            g2.setColor(Color.DARK_GRAY);
+            g2.fillRect(sliderX, sliderY, sliderW, sliderH);
+            
+            // Draw Good zone (yellow) - center 50%
+            g2.setColor(new Color(220, 220, 50));
+            g2.fillRect(sliderX + (int)(sliderW * 0.25), sliderY, (int)(sliderW * 0.50), sliderH);
+            
+            // Draw Critical zone (green) - center 16%
+            g2.setColor(new Color(50, 200, 50));
+            g2.fillRect(sliderX + (int)(sliderW * 0.42), sliderY, (int)(sliderW * 0.16), sliderH);
+            
+            // Draw border
+            g2.setColor(Color.WHITE);
+            g2.drawRect(sliderX, sliderY, sliderW, sliderH);
+            
+            // Draw moving cursor indicator
+            int indicatorX = sliderX + (int)(qteValue * sliderW);
+            g2.setColor(Color.RED);
+            g2.setStroke(new BasicStroke(4));
+            g2.drawLine(indicatorX, sliderY - 4, indicatorX, sliderY + sliderH + 4);
+        } else if (state == BattleState.MOVE_SELECT) {
+            // Background is drawn, choices drawn by drawMoveMenu.
+        } else {
+            // Message text
+            g2.setFont(new Font("Consolas", Font.PLAIN, 18));
+            g2.setColor(Color.WHITE);
+            
+            // Calculate max text width to avoid overlapping with buttons if they are shown
+            int maxTextWidth = (state == BattleState.PLAYER_TURN) ? 320 : (boxWidth - 40);
+            
+            java.util.List<String> lines = GamePanel.wrapText(message, g2.getFontMetrics(), maxTextWidth);
+            int textX = boxX + 20;
+            int textY = boxY + 35;
+            for (String line : lines) {
+                g2.drawString(line, textX, textY);
+                textY += 24;
+            }
+            
+            // "Press SPACE to continue" hint
+            if (state == BattleState.INTRO || state == BattleState.VICTORY || state == BattleState.DEFEAT) {
+                g2.setFont(new Font("Consolas", Font.ITALIC, 11));
+                g2.drawString("Press SPACE to continue", boxX + boxWidth - 175, boxY + boxHeight - 12);
+            }
+        }
+    }
+    
+    private void drawMoveMenu(Graphics2D g2) {
+        int boxX = 50;
+        int boxY = GamePanel.SCREEN_HEIGHT - 150;
         
-        // "Press SPACE to continue" hint
-        if (state == BattleState.INTRO || state == BattleState.VICTORY || state == BattleState.DEFEAT) {
-            g2.setFont(new Font("Consolas", Font.ITALIC, 12));
-            g2.drawString("Press SPACE to continue", boxX + 20, boxY + 80);
+        g2.setFont(new Font("Consolas", Font.BOLD, 15));
+        g2.setColor(Color.WHITE);
+        
+        for (int i = 0; i < PLAYER_MOVES.length; i++) {
+            BattleMove move = PLAYER_MOVES[i];
+            int col = i / 2;
+            int row = i % 2;
+            
+            int x = boxX + 40 + col * 310;
+            int y = boxY + 38 + row * 34;
+            
+            String text = move.name + " (" + move.mpCost + " MP)";
+            if (i == selectedMoveIndex) {
+                g2.setColor(new Color(100, 150, 255));
+                g2.drawString("> " + text, x, y);
+            } else {
+                g2.setColor(Color.WHITE);
+                g2.drawString("  " + text, x, y);
+            }
         }
     }
     
     private void drawActionMenu(Graphics2D g2) {
-        int menuX = GamePanel.SCREEN_WIDTH / 2 - 120;
-        int menuY = GamePanel.SCREEN_HEIGHT - 125;
-        int buttonWidth = 110;
-        int buttonHeight = 50;
-        int spacing = 15;
+        int boxX = 50;
+        int boxY = GamePanel.SCREEN_HEIGHT - 150;
+        int boxWidth = GamePanel.SCREEN_WIDTH - 100;
+        int boxHeight = 100;
+        
+        int buttonWidth = 90;
+        int buttonHeight = 40;
+        int spacing = 10;
+        
+        // Align action menu on the right side of the bottom panel to prevent overlapping
+        int menuX = boxX + boxWidth - 20 - (buttonWidth * 3 + spacing * 2); // 408
+        int menuY = boxY + (boxHeight - buttonHeight) / 2; // 456
         
         // Fight button
         drawButton(g2, "FIGHT", menuX, menuY, buttonWidth, buttonHeight, selectedAction == 0);

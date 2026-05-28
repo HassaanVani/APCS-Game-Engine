@@ -27,11 +27,18 @@ public abstract class GameLevel {
     // Enemies in this level
     protected ArrayList<Enemy> enemies = new ArrayList<>();
     
+    // Projectiles in this level
+    protected ArrayList<Projectile> projectiles = new ArrayList<>();
+    
     // Interactable objects in this level
     protected ArrayList<Interactable> interactables = new ArrayList<>();
     
     // Start position for player
     protected int startX, startY;
+    
+    public void addProjectile(Projectile p) {
+        projectiles.add(p);
+    }
     
     // LevelBuilder helper for students
     protected LevelBuilder builder;
@@ -73,6 +80,16 @@ public abstract class GameLevel {
                 enemy.update(gamePanel.getPlayer(), this);
             }
         }
+        
+        // Update projectiles
+        for (int i = 0; i < projectiles.size(); i++) {
+            Projectile p = projectiles.get(i);
+            p.update(this, gamePanel.getPlayer());
+            if (!p.isActive()) {
+                projectiles.remove(i);
+                i--;
+            }
+        }
     }
     
     public void render(Graphics2D g2) {
@@ -84,12 +101,21 @@ public abstract class GameLevel {
             obj.render(g2);
         }
         
+        // Draw projectiles
+        for (Projectile p : projectiles) {
+            p.render(g2);
+        }
+        
         // Draw enemies
         for (Enemy enemy : enemies) {
             if (!enemy.isDefeated()) {
                 enemy.render(g2);
             }
         }
+    }
+    
+    public ArrayList<Enemy> getEnemies() {
+        return enemies;
     }
     
     /**
@@ -208,7 +234,17 @@ public abstract class GameLevel {
     public Enemy checkEnemyEncounter(Player player) {
         for (Enemy enemy : enemies) {
             if (!enemy.isDefeated() && player.intersects(enemy)) {
-                return enemy;
+                if (enemy.getEncounterType() == Enemy.EncounterType.OVERWORLD_ACTION) {
+                    if (player.getInvincibilityFrames() == 0) {
+                        player.takeDamage(enemy.getTouchDamage());
+                        SoundManager.playSE("hit.wav");
+                        System.out.println("Ouch! Touched overworld enemy: " + enemy.getName());
+                    }
+                    player.rollbackPosition();
+                } else {
+                    // TURN_BASED or HYBRID triggers turn-based screen
+                    return enemy;
+                }
             }
         }
         return null;
