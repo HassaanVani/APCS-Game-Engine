@@ -146,6 +146,31 @@ public abstract class GameLevel {
     }
     
     /**
+     * Check if a tile is solid for a specific entity, taking Flyable/Swimmable interfaces into account
+     */
+    public boolean isTileSolidForEntity(int tileX, int tileY, Entity entity) {
+        // Out of bounds is solid for everyone
+        if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) {
+            return true;
+        }
+        
+        // Flyable check: can cross anything except outer map borders
+        if (entity instanceof Flyable) {
+            return tileX == 0 || tileX == mapWidth - 1 || tileY == 0 || tileY == mapHeight - 1;
+        }
+        
+        int tileType = tileMap[tileX][tileY];
+        
+        // Swimmable check: can cross water (tileType 2) but not walls (tileType 1)
+        if (entity instanceof Swimmable) {
+            return tileType == 1;
+        }
+        
+        // Default check: walls (1) and water (2) are solid
+        return tileType == 1 || tileType == 2;
+    }
+    
+    /**
      * Check collisions with level tiles
      */
     public void checkCollisions(Entity entity) {
@@ -158,8 +183,8 @@ public abstract class GameLevel {
         int bottomTile = (entityBox.y + entityBox.height) / GamePanel.TILE_SIZE;
         
         // Check if any corner is in a solid tile
-        if (isTileSolid(leftTile, topTile) || isTileSolid(rightTile, topTile) ||
-            isTileSolid(leftTile, bottomTile) || isTileSolid(rightTile, bottomTile)) {
+        if (isTileSolidForEntity(leftTile, topTile, entity) || isTileSolidForEntity(rightTile, topTile, entity) ||
+            isTileSolidForEntity(leftTile, bottomTile, entity) || isTileSolidForEntity(rightTile, bottomTile, entity)) {
             entity.rollbackPosition();
             return;
         }

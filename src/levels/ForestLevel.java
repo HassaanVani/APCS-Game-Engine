@@ -100,6 +100,11 @@ public class ForestLevel extends GameLevel {
         bat.setPosition(500, 300);
         bat.setAIBehavior(Enemy.AIBehavior.CHASE);
         addEnemy(bat);
+        
+        // Swimmable Water Slime inside the pond
+        WaterSlime waterSlime = new WaterSlime();
+        waterSlime.setPosition(12 * GamePanel.TILE_SIZE, 8 * GamePanel.TILE_SIZE);
+        addEnemy(waterSlime);
     }
     
     @Override

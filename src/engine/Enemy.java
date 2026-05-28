@@ -195,7 +195,7 @@ public abstract class Enemy extends Entity {
                 int ny = cy + dirsY[i];
                 
                 if (nx >= 0 && nx < mapW && ny >= 0 && ny < mapH) {
-                    if (!visited[nx][ny] && !level.isTileSolid(nx, ny)) {
+                    if (!visited[nx][ny] && !level.isTileSolidForEntity(nx, ny, this)) {
                         visited[nx][ny] = true;
                         parent[nx][ny] = new int[]{cx, cy};
                         queue.add(new int[]{nx, ny});

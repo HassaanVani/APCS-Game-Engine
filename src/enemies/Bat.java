@@ -4,7 +4,7 @@ import engine.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class Bat extends Enemy {
+public class Bat extends Enemy implements Flyable {
     
     public Bat() {
         super("Bat", 25, 12, 3, 30, 12, .2);
