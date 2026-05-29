@@ -14,6 +14,7 @@ public class WaterSlime extends Enemy implements Swimmable {
         
         // Deep blue circle representation
         setCustomSprite(new Color(50, 100, 220), "circle");
+        setEncounterType(EncounterType.HYBRID);
     }
     
     @Override

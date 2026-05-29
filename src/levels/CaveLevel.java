@@ -8,12 +8,13 @@ import java.awt.*;
  * Example Level 2 - Cave Zone
  * Shows different tileset and enemy placement
  */
+@RegisteredLevel(name = "Cave", color = "#505050", doorX = 6, doorY = 4)
 public class CaveLevel extends GameLevel {
     
     public CaveLevel() {
         super("Cave Zone", 16, 12);
-        startX = 100;
-        startY = 500;
+        startX = GamePanel.TILE_SIZE * 2; // 96
+        startY = GamePanel.TILE_SIZE * 9; // 432
         bgmFilename = "cave.wav";
     }
     

@@ -8,6 +8,7 @@ import java.awt.*;
  * Example Level 1 - Forest Zone
  * Demonstrates a level with tile-based map
  */
+@RegisteredLevel(name = "Forest", color = "#228B22", doorX = 3, doorY = 4)
 public class ForestLevel extends GameLevel {
     
     public ForestLevel() {

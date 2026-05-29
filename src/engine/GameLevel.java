@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract GameLevel class - THE KEY POLYMORPHISM CONCEPT
@@ -25,13 +27,13 @@ public abstract class GameLevel {
     protected HashMap<Integer, BufferedImage> tileSprites = new HashMap<>();
     
     // Enemies in this level
-    protected ArrayList<Enemy> enemies = new ArrayList<>();
+    protected List<Enemy> enemies = new CopyOnWriteArrayList<>();
     
     // Projectiles in this level
-    protected ArrayList<Projectile> projectiles = new ArrayList<>();
+    protected List<Projectile> projectiles = new CopyOnWriteArrayList<>();
     
     // Interactable objects in this level
-    protected ArrayList<Interactable> interactables = new ArrayList<>();
+    protected List<Interactable> interactables = new CopyOnWriteArrayList<>();
     
     // Start position for player
     protected int startX, startY;
@@ -115,7 +117,7 @@ public abstract class GameLevel {
     }
     
     public ArrayList<Enemy> getEnemies() {
-        return enemies;
+        return new ArrayList<>(enemies);
     }
     
     /**

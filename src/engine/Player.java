@@ -83,7 +83,9 @@ public class Player extends Entity {
             worldY += speed;
             direction = Direction.DOWN;
             moving = true;
-        } else if (keyHandler.leftPressed) {
+        }
+        
+        if (keyHandler.leftPressed) {
             worldX -= speed;
             direction = Direction.LEFT;
             moving = true;
@@ -181,7 +183,13 @@ public class Player extends Entity {
     public int getWorldY() { return worldY; }
     
     public void addItem(Item item) {
-        inventory.add(item);
+        if (item.getType() == Item.ItemType.SWORD || 
+            item.getType() == Item.ItemType.BOW || 
+            item.getType() == Item.ItemType.ARROW_AMMO) {
+            item.use(this);
+        } else {
+            inventory.add(item);
+        }
     }
     
     public void removeItem(Item item) {

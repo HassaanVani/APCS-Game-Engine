@@ -9,6 +9,7 @@ public class Bat extends Enemy implements Flyable {
     public Bat() {
         super("Bat", 25, 12, 3, 30, 12, .2);
         setCustomSprite(new Color(80, 60, 100), "triangle");
+        setEncounterType(EncounterType.HYBRID);
     }
     
     @Override

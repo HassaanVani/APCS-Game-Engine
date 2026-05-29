@@ -632,6 +632,271 @@ public class BattleSystem {
         g2.drawString(text, textX, textY);
     }
     
+    public void handleMouseMove(int x, int y) {
+        if (messageTimer > 0) return;
+        
+        switch (state) {
+            case PLAYER_TURN:
+                // Hover Fight
+                if (x >= 408 && x <= 498 && y >= 456 && y <= 496) {
+                    selectedAction = 0;
+                }
+                // Hover Item
+                else if (x >= 508 && x <= 598 && y >= 456 && y <= 496) {
+                    selectedAction = 1;
+                }
+                // Hover Run
+                else if (x >= 608 && x <= 698 && y >= 456 && y <= 496) {
+                    selectedAction = 2;
+                }
+                break;
+                
+            case MOVE_SELECT:
+                int boxX = 50;
+                int boxY = GamePanel.SCREEN_HEIGHT - 150;
+                for (int i = 0; i < PLAYER_MOVES.length; i++) {
+                    int col = i / 2;
+                    int row = i % 2;
+                    int xMin = boxX + 40 + col * 310;
+                    int xMax = xMin + 250;
+                    int yMin = boxY + 38 + row * 34 - 20;
+                    int yMax = yMin + 30;
+                    
+                    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
+                        selectedMoveIndex = i;
+                        break;
+                    }
+                }
+                break;
+                
+            case ITEM_SELECT:
+                int invBoxX = 50;
+                int invBoxY = GamePanel.SCREEN_HEIGHT - 280;
+                java.util.ArrayList<Item> inv = player.getInventory();
+                int itemCount = inv.size();
+                int startIdx = Math.max(0, selectedItemIndex - 2);
+                int endIdx = Math.min(itemCount, startIdx + 3);
+                
+                for (int i = startIdx; i < endIdx; i++) {
+                    int slot = i - startIdx;
+                    int xMin = invBoxX + 20;
+                    int xMax = invBoxX + 280;
+                    int yMin = invBoxY + 50 + slot * 20 - 15;
+                    int yMax = yMin + 20;
+                    
+                    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
+                        selectedItemIndex = i;
+                        break;
+                    }
+                }
+                break;
+        }
+    }
+    
+    public void handleMouseClick(int x, int y) {
+        if (messageTimer > 0) return;
+        
+        switch (state) {
+            case INTRO:
+                state = BattleState.PLAYER_TURN;
+                message = "What will you do?";
+                break;
+                
+            case PLAYER_TURN:
+                // Check if clicked FIGHT
+                if (x >= 408 && x <= 498 && y >= 456 && y <= 496) {
+                    selectedAction = 0;
+                    state = BattleState.MOVE_SELECT;
+                    selectedMoveIndex = 0;
+                }
+                // Check if clicked ITEM
+                else if (x >= 508 && x <= 598 && y >= 456 && y <= 496) {
+                    selectedAction = 1;
+                    if (player.getInventory().isEmpty()) {
+                        message = "No items in inventory!";
+                        messageTimer = 45;
+                    } else {
+                        state = BattleState.ITEM_SELECT;
+                        selectedItemIndex = 0;
+                    }
+                }
+                // Check if clicked RUN
+                else if (x >= 608 && x <= 698 && y >= 456 && y <= 496) {
+                    selectedAction = 2;
+                    if (Math.random() < enemy.getRunChance()) {
+                        SoundManager.playSE("run.wav");
+                        message = "Got away safely!";
+                        messageTimer = 60;
+                        gamePanel.endBattle(false);
+                    } else {
+                        SoundManager.playSE("hit.wav");
+                        message = "Can't escape!";
+                        messageTimer = 40;
+                        state = BattleState.ENEMY_TURN;
+                    }
+                }
+                break;
+                
+            case MOVE_SELECT:
+                // Check if clicked on a move
+                int boxX = 50;
+                int boxY = GamePanel.SCREEN_HEIGHT - 150;
+                boolean clickedMove = false;
+                
+                for (int i = 0; i < PLAYER_MOVES.length; i++) {
+                    int col = i / 2;
+                    int row = i % 2;
+                    int xMin = boxX + 40 + col * 310;
+                    int xMax = xMin + 250;
+                    int yMin = boxY + 38 + row * 34 - 20;
+                    int yMax = yMin + 30;
+                    
+                    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
+                        selectedMoveIndex = i;
+                        clickedMove = true;
+                        
+                        BattleMove move = PLAYER_MOVES[selectedMoveIndex];
+                        if (player.getMana() < move.mpCost) {
+                            SoundManager.playSE("hit.wav");
+                            message = "Not enough MP!";
+                            messageTimer = 45;
+                        } else {
+                            player.useMana(move.mpCost);
+                            currentChosenMove = move;
+                            
+                            if (move.name.equals("Guard")) {
+                                playerGuarding = true;
+                                SoundManager.playSE("buff.wav");
+                                message = "You raised your shield! Defense doubled next turn.";
+                                messageTimer = 60;
+                                state = BattleState.ENEMY_TURN;
+                            } else if (move.name.equals("Heal Spell")) {
+                                player.heal(30);
+                                SoundManager.playSE("heal.wav");
+                                message = "Cast Heal Spell! Restored 30 HP.";
+                                messageTimer = 60;
+                                state = BattleState.ENEMY_TURN;
+                            } else {
+                                state = BattleState.QTE_INPUT;
+                                qteValue = 0.0;
+                                qteSpeed = move.name.equals("Slash") ? 0.05 : 0.08;
+                            }
+                        }
+                        break;
+                    }
+                }
+                
+                // If clicked outside the move box, cancel/go back
+                if (!clickedMove) {
+                    if (x < 50 || x > 718 || y < 426 || y > 526) {
+                        state = BattleState.PLAYER_TURN;
+                        message = "What will you do?";
+                    }
+                }
+                break;
+                
+            case ITEM_SELECT:
+                int invBoxX = 50;
+                int invBoxY = GamePanel.SCREEN_HEIGHT - 280;
+                int invBoxWidth = 300;
+                int invBoxHeight = 120;
+                
+                java.util.ArrayList<Item> inv = player.getInventory();
+                int itemCount = inv.size();
+                int startIdx = Math.max(0, selectedItemIndex - 2);
+                int endIdx = Math.min(itemCount, startIdx + 3);
+                
+                boolean clickedItem = false;
+                for (int i = startIdx; i < endIdx; i++) {
+                    int slot = i - startIdx;
+                    int xMin = invBoxX + 20;
+                    int xMax = invBoxX + 280;
+                    int yMin = invBoxY + 50 + slot * 20 - 15;
+                    int yMax = yMin + 20;
+                    
+                    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
+                        selectedItemIndex = i;
+                        clickedItem = true;
+                        
+                        Item item = inv.get(selectedItemIndex);
+                        item.use(player);
+                        player.removeItem(item);
+                        
+                        if (item.getType() == Item.ItemType.POTION) {
+                            SoundManager.playSE("heal.wav");
+                        } else {
+                            SoundManager.playSE("buff.wav");
+                        }
+                        
+                        message = "Used " + item.getName() + "!";
+                        messageTimer = 60;
+                        state = BattleState.ENEMY_TURN;
+                        break;
+                    }
+                }
+                
+                // Cancel if click is outside the item select box
+                if (!clickedItem) {
+                    if (x < invBoxX || x > invBoxX + invBoxWidth || y < invBoxY || y > invBoxY + invBoxHeight) {
+                        state = BattleState.PLAYER_TURN;
+                        message = "What will you do?";
+                    }
+                }
+                break;
+                
+            case QTE_INPUT:
+                // Stop input on click (behaves like SPACE)
+                double diff = Math.abs(qteValue - 0.5);
+                double multiplier = 0.5;
+                String qteResult = "Weak Strike...";
+                
+                if (diff < 0.08) {
+                    multiplier = 1.5;
+                    qteResult = "CRITICAL HIT!";
+                    SoundManager.playSE("victory.wav");
+                } else if (diff < 0.25) {
+                    multiplier = 1.0;
+                    qteResult = "Good Hit!";
+                    SoundManager.playSE("hit.wav");
+                } else {
+                    if (currentChosenMove.name.equals("Heavy Strike")) {
+                        multiplier = 0.0;
+                        qteResult = "Missed!";
+                        SoundManager.playSE("hit.wav");
+                    } else {
+                        SoundManager.playSE("hit.wav");
+                    }
+                }
+                
+                int finalDamage = (int)(currentChosenMove.damagePower * multiplier);
+                if (finalDamage > 0) {
+                    enemy.takeDamage(finalDamage);
+                    message = qteResult + " You dealt " + finalDamage + " damage!";
+                } else {
+                    message = currentChosenMove.name + " " + qteResult;
+                }
+                
+                messageTimer = 60;
+                
+                if (!enemy.isAlive()) {
+                    state = BattleState.VICTORY;
+                    SoundManager.playSE("victory.wav");
+                    message = enemy.getName() + " defeated! Gained " + enemy.getExpReward() + " EXP!";
+                } else {
+                    state = BattleState.ENEMY_TURN;
+                }
+                break;
+                
+            case VICTORY:
+                gamePanel.endBattle(true);
+                break;
+                
+            case DEFEAT:
+                gamePanel.endBattle(false);
+                break;
+        }
+    }
+    
     public Enemy getCurrentEnemy() {
         return enemy;
     }

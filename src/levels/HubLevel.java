@@ -19,15 +19,29 @@ public class HubLevel extends GameLevel {
     }
     
     private static int calculateWidth() {
+        int maxDoorX = 0;
+        for (LevelRegistry.LevelEntry entry : LevelRegistry.getAll()) {
+            if (entry.doorX > maxDoorX) {
+                maxDoorX = entry.doorX;
+            }
+        }
         int levelCount = LevelRegistry.count();
         int cols = Math.min(levelCount, DOORS_PER_ROW);
-        return Math.max(16, 4 + cols * DOOR_SPACING_X);
+        int gridWidth = 4 + cols * DOOR_SPACING_X;
+        return Math.max(16, Math.max(gridWidth, maxDoorX + 3));
     }
     
     private static int calculateHeight() {
+        int maxDoorY = 0;
+        for (LevelRegistry.LevelEntry entry : LevelRegistry.getAll()) {
+            if (entry.doorY > maxDoorY) {
+                maxDoorY = entry.doorY;
+            }
+        }
         int levelCount = LevelRegistry.count();
         int rows = (int) Math.ceil(levelCount / (double) DOORS_PER_ROW);
-        return Math.max(12, 6 + rows * DOOR_SPACING_Y);
+        int gridHeight = 6 + rows * DOOR_SPACING_Y;
+        return Math.max(12, Math.max(gridHeight, maxDoorY + 3));
     }
     
     @Override
@@ -41,19 +55,42 @@ public class HubLevel extends GameLevel {
         }
         
         setupDoors();
+        
+        // Starter chests in Central Hub
+        Item sword = new Item("Training Sword", "An old wooden sword. Press C to swing.", Item.ItemType.SWORD, 0);
+        Chest chestSword = new Chest(2 * GamePanel.TILE_SIZE, 3 * GamePanel.TILE_SIZE, sword);
+        addInteractable(chestSword);
+        
+        Item bow = new Item("Short Bow", "A basic bow. Press X to shoot arrows.", Item.ItemType.BOW, 0);
+        Chest chestBow = new Chest(4 * GamePanel.TILE_SIZE, 3 * GamePanel.TILE_SIZE, bow);
+        addInteractable(chestBow);
+        
+        Item arrows = new Item("Quiver of Arrows", "Contains 15 arrows.", Item.ItemType.ARROW_AMMO, 15);
+        Chest chestArrows = new Chest(6 * GamePanel.TILE_SIZE, 3 * GamePanel.TILE_SIZE, arrows);
+        addInteractable(chestArrows);
     }
     
     private void setupDoors() {
         List<LevelRegistry.LevelEntry> levels = LevelRegistry.getAll();
         
-        for (int i = 0; i < levels.size(); i++) {
-            LevelRegistry.LevelEntry entry = levels.get(i);
+        int gridIndex = 0;
+        for (LevelRegistry.LevelEntry entry : levels) {
+            int doorX;
+            int doorY;
             
-            int col = i % DOORS_PER_ROW;
-            int row = i / DOORS_PER_ROW;
-            
-            int doorX = GamePanel.TILE_SIZE * (2 + col * DOOR_SPACING_X);
-            int doorY = GamePanel.TILE_SIZE * (4 + row * DOOR_SPACING_Y);
+            if (entry.doorX >= 0 && entry.doorY >= 0) {
+                // Use specified coordinates from annotation
+                doorX = entry.doorX * GamePanel.TILE_SIZE;
+                doorY = entry.doorY * GamePanel.TILE_SIZE;
+            } else {
+                // Fall back to grid positioning
+                int col = gridIndex % DOORS_PER_ROW;
+                int row = gridIndex / DOORS_PER_ROW;
+                
+                doorX = GamePanel.TILE_SIZE * (2 + col * DOOR_SPACING_X);
+                doorY = GamePanel.TILE_SIZE * (4 + row * DOOR_SPACING_Y);
+                gridIndex++;
+            }
             
             Door door = new Door(doorX, doorY, entry.name, entry.doorColor);
             doors.add(door);

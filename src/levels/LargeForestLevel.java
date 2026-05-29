@@ -4,17 +4,20 @@ import engine.*;
 import enemies.*;
 import java.awt.*;
 
+import engine.RegisteredLevel;
+
 /**
  * Example Multi-Screen Level - Large Forest
  * Demonstrates Pokemon-style screen transitions
  * This level is 2 screens wide x 2 screens tall (32x24 tiles)
  */
+@RegisteredLevel(name = "Large Forest", color = "#22C822", doorX = 12, doorY = 4)
 public class LargeForestLevel extends GameLevel {
     
     public LargeForestLevel() {
         super("Large Forest", 32, 24);  // 2x2 screens
-        startX = 100;
-        startY = 100;
+        startX = GamePanel.TILE_SIZE * 8; // 384 (on the path)
+        startY = GamePanel.TILE_SIZE * 2; // 96
         bgmFilename = "forest.wav";
     }
     

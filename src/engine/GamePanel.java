@@ -55,6 +55,42 @@ public class GamePanel extends JPanel implements Runnable {
         this.addKeyListener(keyHandler);
         
         setupGame();
+        
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (gameState == GameState.BATTLE) {
+                    int mouseX = e.getX();
+                    int mouseY = e.getY();
+                    int W = getWidth() > 0 ? getWidth() : SCREEN_WIDTH;
+                    int H = getHeight() > 0 ? getHeight() : SCREEN_HEIGHT;
+                    double scaleX = (double) W / SCREEN_WIDTH;
+                    double scaleY = (double) H / SCREEN_HEIGHT;
+                    int battleX = (int) (mouseX / scaleX);
+                    int battleY = (int) (mouseY / scaleY);
+                    
+                    battleSystem.handleMouseClick(battleX, battleY);
+                }
+            }
+            
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (gameState == GameState.BATTLE) {
+                    int mouseX = e.getX();
+                    int mouseY = e.getY();
+                    int W = getWidth() > 0 ? getWidth() : SCREEN_WIDTH;
+                    int H = getHeight() > 0 ? getHeight() : SCREEN_HEIGHT;
+                    double scaleX = (double) W / SCREEN_WIDTH;
+                    double scaleY = (double) H / SCREEN_HEIGHT;
+                    int battleX = (int) (mouseX / scaleX);
+                    int battleY = (int) (mouseY / scaleY);
+                    
+                    battleSystem.handleMouseMove(battleX, battleY);
+                }
+            }
+        };
+        this.addMouseListener(mouseAdapter);
+        this.addMouseMotionListener(mouseAdapter);
     }
     
     private void setupGame() {
@@ -270,7 +306,13 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         
+        int W = getWidth() > 0 ? getWidth() : SCREEN_WIDTH;
+        int H = getHeight() > 0 ? getHeight() : SCREEN_HEIGHT;
+        
         if (gameState == GameState.PLAYING || gameState == GameState.DIALOGUE) {
+            double scale = getRenderScale();
+            g2.scale(scale, scale);
+            
             // Apply camera translation
             g2.translate(-cameraX, -cameraY);
             
@@ -316,6 +358,10 @@ public class GamePanel extends JPanel implements Runnable {
                 drawDialogueBox(g2);
             }
         } else if (gameState == GameState.BATTLE) {
+            double scaleX = (double) W / SCREEN_WIDTH;
+            double scaleY = (double) H / SCREEN_HEIGHT;
+            g2.scale(scaleX, scaleY);
+            
             battleSystem.render(g2);
         }
         
@@ -323,9 +369,12 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawDialogueBox(Graphics2D g2) {
+        int viewportW = getViewportWidth();
+        int viewportH = getViewportHeight();
+        
         int boxX = TILE_SIZE * 2;
-        int boxY = SCREEN_HEIGHT - TILE_SIZE * 3 - 20;
-        int boxWidth = SCREEN_WIDTH - TILE_SIZE * 4;
+        int boxY = viewportH - TILE_SIZE * 3 - 20;
+        int boxWidth = viewportW - TILE_SIZE * 4;
         int boxHeight = TILE_SIZE * 2 + 10;
         
         // Translucent dark box background
@@ -393,23 +442,55 @@ public class GamePanel extends JPanel implements Runnable {
      * Update camera position to follow player (Pokemon-style screen transitions)
      * Camera snaps to screen boundaries
      */
+    public int getViewportWidth() {
+        if (currentLevel == null) return SCREEN_WIDTH;
+        int W = getWidth() > 0 ? getWidth() : SCREEN_WIDTH;
+        int H = getHeight() > 0 ? getHeight() : SCREEN_HEIGHT;
+        int mapW = currentLevel.getMapWidth() * TILE_SIZE;
+        int mapH = currentLevel.getMapHeight() * TILE_SIZE;
+        double scale = Math.max(1.0, Math.max((double) W / mapW, (double) H / mapH));
+        return (int) (W / scale);
+    }
+    
+    public int getViewportHeight() {
+        if (currentLevel == null) return SCREEN_HEIGHT;
+        int W = getWidth() > 0 ? getWidth() : SCREEN_WIDTH;
+        int H = getHeight() > 0 ? getHeight() : SCREEN_HEIGHT;
+        int mapW = currentLevel.getMapWidth() * TILE_SIZE;
+        int mapH = currentLevel.getMapHeight() * TILE_SIZE;
+        double scale = Math.max(1.0, Math.max((double) W / mapW, (double) H / mapH));
+        return (int) (H / scale);
+    }
+    
+    public double getRenderScale() {
+        if (currentLevel == null) return 1.0;
+        int W = getWidth() > 0 ? getWidth() : SCREEN_WIDTH;
+        int H = getHeight() > 0 ? getHeight() : SCREEN_HEIGHT;
+        int mapW = currentLevel.getMapWidth() * TILE_SIZE;
+        int mapH = currentLevel.getMapHeight() * TILE_SIZE;
+        return Math.max(1.0, Math.max((double) W / mapW, (double) H / mapH));
+    }
+    
     private void updateCamera() {
         if (currentLevel == null) return;
         
         int playerCenterX = player.getWorldX() + TILE_SIZE / 2;
         int playerCenterY = player.getWorldY() + TILE_SIZE / 2;
         
+        int viewportW = getViewportWidth();
+        int viewportH = getViewportHeight();
+        
         // Calculate which screen the player is on
-        int screenX = playerCenterX / SCREEN_WIDTH;
-        int screenY = playerCenterY / SCREEN_HEIGHT;
+        int screenX = playerCenterX / viewportW;
+        int screenY = playerCenterY / viewportH;
         
         // Snap camera to that screen
-        int targetCameraX = screenX * SCREEN_WIDTH;
-        int targetCameraY = screenY * SCREEN_HEIGHT;
+        int targetCameraX = screenX * viewportW;
+        int targetCameraY = screenY * viewportH;
         
         // Clamp camera to level bounds
-        int maxCameraX = Math.max(0, currentLevel.getMapWidth() * TILE_SIZE - SCREEN_WIDTH);
-        int maxCameraY = Math.max(0, currentLevel.getMapHeight() * TILE_SIZE - SCREEN_HEIGHT);
+        int maxCameraX = Math.max(0, currentLevel.getMapWidth() * TILE_SIZE - viewportW);
+        int maxCameraY = Math.max(0, currentLevel.getMapHeight() * TILE_SIZE - viewportH);
         
         cameraX = Math.max(0, Math.min(targetCameraX, maxCameraX));
         cameraY = Math.max(0, Math.min(targetCameraY, maxCameraY));
@@ -466,6 +547,25 @@ public class GamePanel extends JPanel implements Runnable {
             if (player.hasBow()) weaponText.append("Bow(X) x").append(player.getArrows());
             g2.drawString(weaponText.toString().trim(), barX + 5, 72);
         }
+        
+        // Draw Gold HUD in top right
+        int goldX = getViewportWidth() - 120;
+        int goldY = 20;
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRect(goldX - 2, goldY - 2, 104, 24);
+        g2.setColor(Color.WHITE);
+        g2.drawRect(goldX, goldY, 100, 20);
+        
+        // Gold Coin Icon
+        g2.setColor(Color.YELLOW);
+        g2.fillOval(goldX + 8, goldY + 4, 12, 12);
+        g2.setColor(Color.ORANGE);
+        g2.drawOval(goldX + 8, goldY + 4, 12, 12);
+        
+        // Gold Text
+        g2.setFont(new Font("Arial", Font.BOLD, 12));
+        g2.setColor(Color.WHITE);
+        g2.drawString(player.getGold() + " G", goldX + 28, goldY + 14);
     }
     
     public void startBattle(Enemy enemy) {

@@ -4,16 +4,19 @@ import engine.*;
 import enemies.*;
 import java.awt.*;
 
+import engine.RegisteredLevel;
+
 /**
  * Example Level 2 - Cave Zone
  * Shows different tileset and enemy placement
  */
+@RegisteredLevel(name = "Jupvir's Cavern", color = "#C864FF", doorX = 9, doorY = 4)
 public class JuppyCavernLevel extends GameLevel {
     
     public JuppyCavernLevel() {
         super("Jupvir's Cavern", 16, 12);
-        startX = 100;
-        startY = 400;
+        startX = GamePanel.TILE_SIZE * 2; // 96
+        startY = GamePanel.TILE_SIZE * 8; // 384
         bgmFilename = "cave.wav";
     }
     

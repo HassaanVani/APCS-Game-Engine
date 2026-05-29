@@ -8,6 +8,7 @@ public class Slime extends Enemy {
     public Slime() {
         super("Slime", 40, 10, 4, 25, 10, .5);
         setCustomSprite(new Color(100, 200, 100), "circle");
+        setEncounterType(EncounterType.HYBRID);
     }
     
     @Override

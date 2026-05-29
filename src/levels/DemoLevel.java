@@ -4,10 +4,13 @@ import engine.*;
 import enemies.*;
 import java.awt.*;
 
+import engine.RegisteredLevel;
+
 /**
  * Demo Level - Shows off LevelBuilder features
  * This level demonstrates all the easy building methods
  */
+@RegisteredLevel(name = "Demo Level", color = "#FFD700", doorX = 15, doorY = 4)
 public class DemoLevel extends GameLevel {
     
     public DemoLevel() {
