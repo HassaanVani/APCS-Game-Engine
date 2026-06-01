@@ -260,6 +260,46 @@ public abstract class GameLevel {
     }
     
     /**
+     * Get the player instance
+     */
+    public Player getPlayer() {
+        return gamePanel != null ? gamePanel.getPlayer() : null;
+    }
+
+    /**
+     * Set a custom sprite for the player in this level
+     * @param filename Sprite filename (e.g., "player.png")
+     */
+    public void setPlayerSprite(String filename) {
+        Player player = getPlayer();
+        if (player != null) {
+            player.setCustomSprite(filename);
+        }
+    }
+
+    /**
+     * Set a custom sprite for the player using a color and shape
+     * @param color Sprite color
+     * @param shape "circle", "triangle", "diamond", "square"
+     */
+    public void setPlayerSprite(Color color, String shape) {
+        Player player = getPlayer();
+        if (player != null) {
+            player.setCustomSprite(color, shape);
+        }
+    }
+
+    /**
+     * Revert the player sprite back to the default image/color
+     */
+    public void resetPlayerSprite() {
+        Player player = getPlayer();
+        if (player != null) {
+            player.createDefaultSprite();
+        }
+    }
+    
+    /**
      * Add an enemy to this level
      */
     protected void addEnemy(Enemy enemy) {

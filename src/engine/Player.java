@@ -35,7 +35,7 @@ public class Player extends Entity {
         createDefaultSprite();
     }
     
-    private void createDefaultSprite() {
+    public void createDefaultSprite() {
         // Try to load custom sprite, fall back to default
         sprite = SpriteManager.getSpriteOrFallback("player.png", new Color(50, 150, 255));
     }
