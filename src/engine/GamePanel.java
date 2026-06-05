@@ -235,10 +235,13 @@ public class GamePanel extends JPanel implements Runnable {
                 currentLevel.update();
                 currentLevel.checkCollisions(player);
 
-                if (currentLevel instanceof levels.HubLevel) {
-                    levels.HubLevel hub = (levels.HubLevel) currentLevel;
-                    Door door = hub.checkDoorCollision(player);
-                    if (door != null) {
+                Door door = currentLevel.checkDoorCollision(player);
+                if (door != null) {
+                    if (door.getTargetLevelName().equalsIgnoreCase("Hub") || 
+                        door.getTargetLevelName().equalsIgnoreCase("Central Hub") ||
+                        (hubLevel != null && door.getTargetLevelName().equalsIgnoreCase(hubLevel.getLevelName()))) {
+                        returnToHub();
+                    } else {
                         switchToLevel(door.getTargetLevelName());
                     }
                 }

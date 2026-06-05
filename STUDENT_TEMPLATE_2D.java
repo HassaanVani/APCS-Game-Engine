@@ -11,10 +11,11 @@ import java.awt.*;
  * Your Level Name Here
  * Example: Volcano Zone, Ice Cave, Desert Temple, etc.
  */
+@RegisteredLevel(name = "Your Level Name", color = "#4B0082", doorX = 6, doorY = 6)
 public class StudentName_Level extends GameLevel {
     
     public StudentName_Level() {
-        super("Your Level Name", 16, 12);  // 16x12 tiles (fits screen)
+        super("Your Level Name", 16, 12);  // 16x12 tiles (Set higher to make multi-screen snap maps!)
         
         // Set where player starts (in pixels)
         startX = 100;
@@ -23,15 +24,25 @@ public class StudentName_Level extends GameLevel {
     
     @Override
     public void setupMap() {
-        // TODO: Design your map here!
-        
         // TILE TYPES:
+        // -1 or 9 = Void / Empty space (solid black, no grid lines drawn - useful for non-rectangular shape maps)
         // 0 = Grass/Floor (walkable)
         // 1 = Wall/Obstacle (blocks movement)
         // 2 = Water (blocks movement)
         // 3 = Path (walkable)
         // 4+ = Custom tiles (you define colors below)
         
+        // TILE SPRITES & CUSTOM IMAGES:
+        // You MUST place your custom sprite assets inside the project's "sprites/" directory!
+        // Load custom tile textures like this:
+        // setTileSprite(0, "grass.png");
+        // setTileSprite(1, "wall.png");
+        
+        // MULTI-SCREEN SNAP CAMERAS:
+        // Design multi-screen maps to make your project look highly polished and professional.
+        // Set map width and height to multiples of 16 and 12 (e.g. super("My Level", 32, 24) for 2x2 screens).
+        // The camera snaps to screens automatically as the player crosses boundaries!
+
         // Example: Fill entire map with grass
         fillRect(0, 0, mapWidth, mapHeight, 0);
         
@@ -56,24 +67,72 @@ public class StudentName_Level extends GameLevel {
         setTile(3, 7, 1);
         setTile(7, 7, 1);
         
-        // TIP: Draw your map on graph paper first!
+        // ============================================================
+        // CHESTS, ITEMS, BARRIERS, EXITS, AND NPC ABILITIES
+        // ============================================================
+        
+        // 1. Create a chest with a training sword
+        Item sword = new Item("Training Sword", "A basic wooden sword. Press C to swing.", Item.ItemType.SWORD, 0);
+        Chest swordChest = new Chest(
+            4 * GamePanel.TILE_SIZE, 
+            4 * GamePanel.TILE_SIZE, 
+            sword
+        );
+        addInteractable(swordChest);
+
+        // 2. Create a chest with a mana (MP) potion
+        Item manaPotion = new Item("Mana Potion", "Restores 15 MP. Use in battle.", Item.ItemType.POTION_MANA, 15);
+        Chest manaChest = new Chest(
+            4 * GamePanel.TILE_SIZE,
+            6 * GamePanel.TILE_SIZE,
+            manaPotion
+        );
+        addInteractable(manaChest);
+
+        // 3. Create a Rest Zone (restores both HP and MP fully when interacted with)
+        RestZone restZone = new RestZone(
+            10 * GamePanel.TILE_SIZE,
+            4 * GamePanel.TILE_SIZE
+        );
+        addInteractable(restZone);
+
+        // 4. Create an exit door back to Central Hub (acts as "end of level" marker)
+        // By default, it falls back to a colored square. You can also specify a custom door sprite file:
+        // Door exitDoor = new Door(x, y, "Central Hub", Color.GOLD, "my_door_sprite.png");
+        Door exitDoor = new Door(
+            14 * GamePanel.TILE_SIZE,
+            9 * GamePanel.TILE_SIZE,
+            "Central Hub",
+            Color.GOLD
+        );
+        addDoor(exitDoor);
+
+        // 5. Create a barrier in front of the exit door
+        // This blocks the player until ALL enemies in the level are defeated!
+        EnemyBarrier barrier = new EnemyBarrier(
+            13 * GamePanel.TILE_SIZE,
+            9 * GamePanel.TILE_SIZE
+        );
+        addInteractable(barrier);
+        
+        // 6. Create an NPC wizard who speaks when interacted with
+        NPC wizard = new NPC(
+            "Elder Eldrin",
+            6 * GamePanel.TILE_SIZE,
+            4 * GamePanel.TILE_SIZE,
+            new Color(147, 112, 219),
+            "Greetings! Open the chest to acquire a Sword. Defeat the slimes!\n" +
+            "Stand in the blue Rest Zone to fully restore your health and mana!"
+        );
+        addInteractable(wizard);
     }
     
     @Override
     public void setupEnemies() {
-        // TODO: Place your enemies!
-        
         // Example: Add a slime enemy
         Slime slime = new Slime();
         slime.setPosition(200, 200);  // X, Y position in pixels
         addEnemy(slime);
-        
-        // Example: Add your custom enemy
-        // YourEnemy enemy = new YourEnemy();
-        // enemy.setPosition(400, 300);
-        // addEnemy(enemy);
-        
-        // TIP: Don't place enemies too close to the start position!
     }
     
     @Override
@@ -84,28 +143,9 @@ public class StudentName_Level extends GameLevel {
             case 1: return new Color(139, 69, 19);    // Brown wall
             case 2: return new Color(70, 130, 180);   // Blue water
             case 3: return new Color(210, 180, 140);  // Tan path
-            
-            // Add your custom tile colors:
-            // case 4: return new Color(255, 0, 0);   // Red lava
-            // case 5: return new Color(200, 200, 255); // Ice
-            
             default: return Color.GRAY;
         }
     }
-    
-    // OPTIONAL: Override collision detection for special tiles
-    /*
-    @Override
-    public boolean isTileSolid(int tileX, int tileY) {
-        if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) {
-            return true; // Out of bounds
-        }
-        int tileType = tileMap[tileX][tileY];
-        
-        // Define which tiles block movement
-        return tileType == 1 || tileType == 2; // Walls and water
-    }
-    */
 }
 
 // ============================================================
@@ -117,7 +157,6 @@ package enemies;
 
 import engine.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public class StudentName_Enemy extends Enemy {
     
@@ -128,35 +167,20 @@ public class StudentName_Enemy extends Enemy {
             12,             // Attack Power
             5,              // Defense
             40,             // EXP Reward
-            20              // Gold Reward
+            20,             // Gold Reward
+            0.5             // Run/escape chance
         );
-        createCustomSprite();
-    }
-    
-    private void createCustomSprite() {
-        sprite = new BufferedImage(GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, 
-                                  BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = sprite.createGraphics();
         
-        // Draw your enemy sprite here!
-        // Example: A red square
-        g2.setColor(Color.RED);
-        g2.fillRect(8, 8, 32, 32);
-        
-        g2.dispose();
+        // Use a simple shape for appearance
+        setCustomSprite(Color.RED, "circle");
     }
     
     @Override
     public String performBattleAction(Player player) {
-        // What does your enemy do in battle?
+        // Simple attack action during turn-based combat
         int damage = attack();
         player.takeDamage(damage);
         return name + " attacks for " + damage + " damage!";
-        
-        // You can add special abilities:
-        // if (Math.random() < 0.3) {
-        //     return name + " missed!";
-        // }
     }
     
     @Override
@@ -172,58 +196,31 @@ public class StudentName_Enemy extends Enemy {
 //
 // 1. PLANNING:
 //    - Draw your map on graph paper (16x12 grid)
-//    - Plan where enemies will be
+//    - Plan where enemies and NPCs will be
 //    - Think about the theme (forest, cave, desert, etc.)
 //
 // 2. MAP DESIGN:
 //    - Always create border walls (prevents player from leaving)
 //    - Leave open spaces for player to move
 //    - Create paths and rooms
-//    - Don't make it too crowded
 //
 // 3. ENEMY PLACEMENT:
 //    - Don't place enemies at spawn point (startX, startY)
 //    - Space them out
-//    - Consider difficulty progression
-//    - 2-5 enemies is good for one level
 //
-// 4. TILE COLORS:
-//    - Use RGB colors: new Color(Red, Green, Blue)
-//    - Values range from 0-255
-//    - Make walkable/non-walkable tiles visually distinct
-//
-// 5. TESTING:
-//    - Test your level frequently
-//    - Make sure player can move around
-//    - Check that enemies work
-//    - Adjust difficulty as needed
+// 4. TESTING:
+//    - Test your level frequently by walking around
+//    - Check that chests give items and NPCs talk when you press SPACE/ENTER
 //
 // ============================================================
 // LOADING CUSTOM SPRITES (ADVANCED)
 // ============================================================
 //
-// To load an image file for tiles or enemies:
-/*
-import javax.imageio.ImageIO;
-import java.io.File;
-
-try {
-    BufferedImage img = ImageIO.read(new File("sprites/mysprite.png"));
-    // Use img as your sprite
-} catch (Exception e) {
-    e.printStackTrace();
-}
-*/
+// To load an image file for players, tiles, or enemies:
+// Use the SpriteManager to load, cache, and automatically scale the image:
 //
-// Put your sprite images in a "sprites" folder in your project
-// Sprites should be 48x48 pixels for best results
+//   sprite = SpriteManager.loadSprite("my_sprite.png");
 //
-// ============================================================
-// HELPER METHODS YOU CAN USE
-// ============================================================
+// - Put your sprite images in the "sprites" folder in your project.
+// - Sprites are automatically scaled to the correct tile size (48x48).
 //
-// setTile(x, y, tileType)          - Set one tile
-// fillRect(x, y, width, height, tileType) - Fill rectangle
-// addEnemy(enemy)                  - Add enemy to level
-//
-// ============================================================

@@ -6,6 +6,7 @@ package engine;
 public class Item {
     public enum ItemType {
         POTION,        // Restores health
+        POTION_MANA,   // Restores mana (MP)
         BUFF_ATTACK,   // Permanently increases attack power
         BUFF_DEFENSE,  // Permanently increases defense
         SWORD,         // Unlocks sword swing in overworld
@@ -38,6 +39,10 @@ public class Item {
             case POTION:
                 player.heal(value);
                 System.out.println("Healed player for " + value + " HP.");
+                break;
+            case POTION_MANA:
+                player.setMana(player.getMana() + value);
+                System.out.println("Restored " + value + " MP.");
                 break;
             case BUFF_ATTACK:
                 player.increaseAttack(value);

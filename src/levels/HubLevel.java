@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HubLevel extends GameLevel {
-    private ArrayList<Door> doors = new ArrayList<>();
     private static final int DOORS_PER_ROW = 4;
     private static final int DOOR_SPACING_X = 3;
     private static final int DOOR_SPACING_Y = 2;
@@ -68,6 +67,31 @@ public class HubLevel extends GameLevel {
         Item arrows = new Item("Quiver of Arrows", "Contains 15 arrows.", Item.ItemType.ARROW_AMMO, 15);
         Chest chestArrows = new Chest(6 * GamePanel.TILE_SIZE, 3 * GamePanel.TILE_SIZE, arrows);
         addInteractable(chestArrows);
+        
+        // Signpost next to the chests
+        Signpost controlsSign = new Signpost(
+            1 * GamePanel.TILE_SIZE,
+            3 * GamePanel.TILE_SIZE,
+            "=== ENGINE WEAPON GUIDE ===\n" +
+            "1. Open the chests next to this sign!\n" +
+            "2. Acquire the Sword and Bow.\n" +
+            "3. Controls:\n" +
+            "   - Press C: Swing Sword in the overworld!\n" +
+            "   - Press X: Shoot Bow (requires arrows)!"
+        );
+        addInteractable(controlsSign);
+
+        // Guide NPC next to the spawn point
+        NPC guide = new NPC(
+            "Guide Bob",
+            3 * GamePanel.TILE_SIZE,
+            2 * GamePanel.TILE_SIZE,
+            new Color(255, 100, 100),
+            "Welcome! Open the chests below to equip your sword and bow before entering a level.\n" +
+            "Press C to slash overworld enemies directly.\n" +
+            "Press X to shoot your bow."
+        );
+        addInteractable(guide);
     }
     
     private void setupDoors() {
@@ -104,10 +128,6 @@ public class HubLevel extends GameLevel {
     public void render(Graphics2D g2) {
         super.render(g2);
         
-        for (Door door : doors) {
-            door.render(g2);
-        }
-        
         g2.setFont(new Font("Arial", Font.BOLD, 16));
         String title = "LEVEL SELECT";
         FontMetrics fm = g2.getFontMetrics();
@@ -126,14 +146,6 @@ public class HubLevel extends GameLevel {
         g2.drawString(sub, textX, GamePanel.TILE_SIZE + 38);
     }
     
-    public Door checkDoorCollision(Player player) {
-        for (Door door : doors) {
-            if (door.checkPlayerCollision(player)) {
-                return door;
-            }
-        }
-        return null;
-    }
     
     @Override
     protected Color getTileColor(int tileType) {

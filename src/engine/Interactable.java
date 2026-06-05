@@ -23,9 +23,16 @@ public abstract class Interactable extends Entity {
      */
     public abstract void onInteract(Player player, GamePanel gp);
     
+    /**
+     * Optional update loop for interactable entities (e.g., barriers opening)
+     */
+    public void update(GameLevel level) {
+        // Do nothing by default
+    }
+    
     public void render(Graphics2D g2) {
         if (sprite != null) {
-            g2.drawImage(sprite, worldX, worldY, null);
+            g2.drawImage(sprite, worldX, worldY, GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, null);
         }
     }
     

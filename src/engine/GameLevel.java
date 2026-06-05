@@ -35,11 +35,27 @@ public abstract class GameLevel {
     // Interactable objects in this level
     protected List<Interactable> interactables = new CopyOnWriteArrayList<>();
     
+    // Doors in this level (e.g. exit portals back to the hub)
+    protected List<Door> doors = new CopyOnWriteArrayList<>();
+    
     // Start position for player
     protected int startX, startY;
     
     public void addProjectile(Projectile p) {
         projectiles.add(p);
+    }
+    
+    public void addDoor(Door door) {
+        doors.add(door);
+    }
+    
+    public Door checkDoorCollision(Player player) {
+        for (Door door : doors) {
+            if (door.checkPlayerCollision(player)) {
+                return door;
+            }
+        }
+        return null;
     }
     
     // LevelBuilder helper for students
@@ -83,6 +99,11 @@ public abstract class GameLevel {
             }
         }
         
+        // Update interactable entities (like barriers)
+        for (Interactable obj : interactables) {
+            obj.update(this);
+        }
+        
         // Update projectiles
         for (int i = 0; i < projectiles.size(); i++) {
             Projectile p = projectiles.get(i);
@@ -97,6 +118,11 @@ public abstract class GameLevel {
     public void render(Graphics2D g2) {
         // Draw tiles
         renderTiles(g2);
+        
+        // Draw doors
+        for (Door door : doors) {
+            door.render(g2);
+        }
         
         // Draw interactables
         for (Interactable obj : interactables) {
@@ -123,15 +149,36 @@ public abstract class GameLevel {
     /**
      * Render all tiles on the map
      */
+    /**
+     * Check if a tile type is a "void" tile (representing empty space/vacuum outside the map boundary).
+     * Void tiles do not render grid lines and default to a solid black color, allowing non-rectangular layouts.
+     */
+    public boolean isVoidTile(int tileType) {
+        return tileType == -1 || tileType == 9;
+    }
+
+    /**
+     * Render all tiles on the map
+     */
     protected void renderTiles(Graphics2D g2) {
         for (int x = 0; x < mapWidth; x++) {
             for (int y = 0; y < mapHeight; y++) {
                 int tileType = tileMap[x][y];
                 
+                // If it's a void tile, render as black and skip grid lines / sprites
+                if (isVoidTile(tileType)) {
+                    g2.setColor(Color.BLACK);
+                    g2.fillRect(x * GamePanel.TILE_SIZE, y * GamePanel.TILE_SIZE, 
+                               GamePanel.TILE_SIZE, GamePanel.TILE_SIZE);
+                    continue;
+                }
+                
                 // Check if sprite exists for this tile type
                 if (tileSprites.containsKey(tileType)) {
                     BufferedImage sprite = tileSprites.get(tileType);
-                    g2.drawImage(sprite, x * GamePanel.TILE_SIZE, y * GamePanel.TILE_SIZE, null);
+                    // Explicitly draw at TILE_SIZE to handle scaling
+                    g2.drawImage(sprite, x * GamePanel.TILE_SIZE, y * GamePanel.TILE_SIZE, 
+                                 GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, null);
                 } else {
                     // Fall back to color rendering
                     Color tileColor = getTileColor(tileType);
@@ -170,7 +217,7 @@ public abstract class GameLevel {
             return true; // Out of bounds
         }
         int tileType = tileMap[tileX][tileY];
-        return tileType == 1 || tileType == 2; // Walls and water are solid
+        return tileType == 1 || tileType == 2 || isVoidTile(tileType); // Walls, water, and void are solid
     }
     
     /**
@@ -182,12 +229,17 @@ public abstract class GameLevel {
             return true;
         }
         
+        int tileType = tileMap[tileX][tileY];
+        
+        // Void is always solid for all entities
+        if (isVoidTile(tileType)) {
+            return true;
+        }
+        
         // Flyable check: can cross anything except outer map borders
         if (entity instanceof Flyable) {
             return tileX == 0 || tileX == mapWidth - 1 || tileY == 0 || tileY == mapHeight - 1;
         }
-        
-        int tileType = tileMap[tileX][tileY];
         
         // Swimmable check: can cross water (tileType 2) but not walls (tileType 1)
         if (entity instanceof Swimmable) {

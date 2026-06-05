@@ -12,11 +12,23 @@ public class SoundManager {
     private static String activeBgmName = "";
     private static final String SOUND_DIR = "sound/";
     
+    private static File findSoundFile(String filename) {
+        File file = new File(SOUND_DIR + filename);
+        if (file.exists()) {
+            return file;
+        }
+        file = new File("src/" + SOUND_DIR + filename);
+        if (file.exists()) {
+            return file;
+        }
+        return null;
+    }
+    
     /**
      * Play looping background music
      * @param filename Name of BGM file (e.g., "theme.wav")
      */
-    public static void playBGM(String filename) {
+    public static synchronized void playBGM(String filename) {
         if (activeBgmName.equals(filename)) {
             return; // Already playing
         }
@@ -26,8 +38,8 @@ public class SoundManager {
         
         new Thread(() -> {
             try {
-                File file = new File(SOUND_DIR + filename);
-                if (!file.exists()) {
+                File file = findSoundFile(filename);
+                if (file == null) {
                     System.out.println("[BGM Playing]: " + filename);
                     return;
                 }
@@ -37,7 +49,17 @@ public class SoundManager {
                 clip.open(audioStream);
                 clip.loop(Clip.LOOP_CONTINUOUSLY);
                 clip.start();
-                activeBgm = clip;
+                
+                synchronized (SoundManager.class) {
+                    if (activeBgmName.equals(filename)) {
+                        activeBgm = clip;
+                    } else {
+                        // BGM changed while loading, close the clip
+                        clip.stop();
+                        clip.close();
+                        audioStream.close();
+                    }
+                }
             } catch (Exception e) {
                 System.err.println("Error playing BGM " + filename + ": " + e.getMessage());
             }
@@ -47,7 +69,7 @@ public class SoundManager {
     /**
      * Stop currently playing BGM
      */
-    public static void stopBGM() {
+    public static synchronized void stopBGM() {
         if (activeBgm != null) {
             activeBgm.stop();
             activeBgm.close();
@@ -63,8 +85,8 @@ public class SoundManager {
     public static void playSE(String filename) {
         new Thread(() -> {
             try {
-                File file = new File(SOUND_DIR + filename);
-                if (!file.exists()) {
+                File file = findSoundFile(filename);
+                if (file == null) {
                     System.out.println("[SFX Played]: " + filename);
                     return;
                 }
@@ -72,6 +94,16 @@ public class SoundManager {
                 AudioInputStream audioStream = AudioSystem.getAudioInputStream(file);
                 Clip clip = AudioSystem.getClip();
                 clip.open(audioStream);
+                clip.addLineListener(event -> {
+                    if (event.getType() == LineEvent.Type.STOP) {
+                        clip.close();
+                        try {
+                            audioStream.close();
+                        } catch (Exception e) {
+                            // ignore
+                        }
+                    }
+                });
                 clip.start();
             } catch (Exception e) {
                 System.err.println("Error playing SE " + filename + ": " + e.getMessage());

@@ -284,7 +284,7 @@ public abstract class Enemy extends Entity {
     
     public void render(Graphics2D g2) {
         if (!defeated && !invisible && sprite != null) {
-            g2.drawImage(sprite, worldX, worldY + bobOffset, null);
+            g2.drawImage(sprite, worldX, worldY + bobOffset, GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, null);
         }
     }
     

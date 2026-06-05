@@ -109,7 +109,7 @@ public class Player extends Entity {
     }
     
     public void render(Graphics2D g2) {
-        g2.drawImage(sprite, worldX, worldY + bobOffset, null);
+        g2.drawImage(sprite, worldX, worldY + bobOffset, GamePanel.TILE_SIZE, GamePanel.TILE_SIZE, null);
     }
     
     public void setPosition(int x, int y) {

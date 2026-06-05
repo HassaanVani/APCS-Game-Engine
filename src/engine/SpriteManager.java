@@ -15,6 +15,15 @@ public class SpriteManager {
     private static HashMap<String, BufferedImage> spriteCache = new HashMap<>();
     private static final String SPRITES_DIR = "sprites/";
     
+    private static BufferedImage scaleImage(BufferedImage original, int width, int height) {
+        BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = scaled.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.drawImage(original, 0, 0, width, height, null);
+        g2.dispose();
+        return scaled;
+    }
+    
     /**
      * Load a sprite from file with automatic caching
      * @param filename Name of the sprite file (e.g., "player.png")
@@ -28,8 +37,10 @@ public class SpriteManager {
         
         try {
             BufferedImage sprite = ImageIO.read(new File(SPRITES_DIR + filename));
+            // Scale sprite down/up to tile size
+            sprite = scaleImage(sprite, GamePanel.TILE_SIZE, GamePanel.TILE_SIZE);
             spriteCache.put(filename, sprite);
-            System.out.println("Loaded sprite: " + filename);
+            System.out.println("Loaded and scaled sprite: " + filename);
             return sprite;
         } catch (IOException e) {
             System.err.println("Could not load sprite: " + filename);
