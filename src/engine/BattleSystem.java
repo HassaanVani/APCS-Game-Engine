@@ -228,8 +228,9 @@ public class BattleSystem {
                     
                     int finalDamage = (int)(currentChosenMove.damagePower * multiplier);
                     if (finalDamage > 0) {
+                        int actualDamage = Math.max(1, finalDamage - enemy.getDefense());
                         enemy.takeDamage(finalDamage);
-                        message = qteResult + " You dealt " + finalDamage + " damage!";
+                        message = qteResult + " You dealt " + actualDamage + " damage!";
                     } else {
                         message = currentChosenMove.name + " " + qteResult;
                     }
@@ -315,9 +316,10 @@ public class BattleSystem {
     
     private void playerAttack() {
         int damage = player.attack();
+        int actualDamage = Math.max(1, damage - enemy.getDefense());
         enemy.takeDamage(damage);
         SoundManager.playSE("hit.wav");
-        message = "You dealt " + damage + " damage!";
+        message = "You dealt " + actualDamage + " damage!";
         messageTimer = 60;
         
         if (!enemy.isAlive()) {
@@ -870,8 +872,9 @@ public class BattleSystem {
                 
                 int finalDamage = (int)(currentChosenMove.damagePower * multiplier);
                 if (finalDamage > 0) {
+                    int actualDamage = Math.max(1, finalDamage - enemy.getDefense());
                     enemy.takeDamage(finalDamage);
-                    message = qteResult + " You dealt " + finalDamage + " damage!";
+                    message = qteResult + " You dealt " + actualDamage + " damage!";
                 } else {
                     message = currentChosenMove.name + " " + qteResult;
                 }

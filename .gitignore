@@ -51,3 +51,9 @@ Desktop.ini
 # Temporary files
 temp/
 tmp/
+
+# Tennis court level and enemies
+src/levels/AidensLevel.java
+src/levels/AidensLevel.class
+src/enemies/TennisEnemy*.java
+src/enemies/TennisEnemy*.class

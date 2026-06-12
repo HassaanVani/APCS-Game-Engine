@@ -177,6 +177,14 @@ public class GamePanel extends JPanel implements Runnable {
             if (shootCooldown > 0) shootCooldown--;
             player.update();
             
+            if (player.getHealth() <= 0) {
+                player.heal(player.getMaxHealth());
+                player.setMana(player.getMaxMana());
+                returnToHub();
+                showDialogue("You fainted and woke up in the Central Hub with fully restored health!");
+                return;
+            }
+            
             // Check for overworld sword attacks
             if (keyHandler.cPressed && player.hasSword() && player.getSwordSwingActiveFrames() == 0) {
                 player.startSwordSwing();
@@ -575,15 +583,47 @@ public class GamePanel extends JPanel implements Runnable {
         SoundManager.playSE("encounter.wav");
         SoundManager.playBGM("battle.wav");
         gameState = GameState.BATTLE;
+        player.setInBattle(true);
         battleSystem.startBattle(player, enemy);
     }
     
     public void endBattle(boolean playerWon) {
         gameState = GameState.PLAYING;
+        player.setInBattle(false);
+        player.triggerInvincibility(60); // Safe buffer invincibility when returning to overworld
         if (playerWon && currentLevel != null) {
             currentLevel.onEnemyDefeated(battleSystem.getCurrentEnemy());
-        } else{
-            player.setPosition(player.getWorldX()-GamePanel.TILE_SIZE, player.getWorldY());
+        } else {
+            if (player.getHealth() <= 0) {
+                player.heal(player.getMaxHealth());
+                player.setMana(player.getMaxMana());
+                returnToHub();
+                showDialogue("You fainted and woke up in the Central Hub with fully restored health!");
+            } else {
+                // Safe push-back (prevent wall clipping)
+                player.rollbackPosition();
+                
+                int tileX = player.getWorldX() / GamePanel.TILE_SIZE;
+                int tileY = player.getWorldY() / GamePanel.TILE_SIZE;
+                
+                if (currentLevel != null && currentLevel.isTileSolid(tileX, tileY)) {
+                    int[] dx = {-1, 1, 0, 0, -1, -1, 1, 1};
+                    int[] dy = {0, 0, -1, 1, -1, 1, -1, 1};
+                    boolean found = false;
+                    for (int i = 0; i < dx.length; i++) {
+                        int nx = tileX + dx[i];
+                        int ny = tileY + dy[i];
+                        if (!currentLevel.isTileSolid(nx, ny)) {
+                            player.setPosition(nx * GamePanel.TILE_SIZE, ny * GamePanel.TILE_SIZE);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        player.setPosition(currentLevel.getStartX(), currentLevel.getStartY());
+                    }
+                }
+            }
         }
         
         // Restore level specific BGM

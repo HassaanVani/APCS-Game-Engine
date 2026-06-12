@@ -23,6 +23,7 @@ public class Player extends Entity {
     private int arrows = 0;
     private int invincibilityFrames = 0;
     private int swordSwingActiveFrames = 0;
+    private boolean inBattle = false;
     
     public Player(KeyHandler keyHandler) {
         super("Player", 100, 15, 10);
@@ -146,11 +147,16 @@ public class Player extends Entity {
     
     @Override
     public void takeDamage(int damage) {
-        if (invincibilityFrames == 0) {
+        if (inBattle) {
+            super.takeDamage(damage);
+        } else if (invincibilityFrames == 0) {
             super.takeDamage(damage);
             triggerInvincibility(60); // 1 second (60 frames) of invincibility
         }
     }
+    
+    public boolean isInBattle() { return inBattle; }
+    public void setInBattle(boolean inBattle) { this.inBattle = inBattle; }
     
     // Getters and Setters
     public int getMana() { return mana; }
